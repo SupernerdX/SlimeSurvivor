@@ -1,25 +1,44 @@
-using UnityEngine;
+using System;
 using UnityEditor;
 using UnityEditor.Toolbars;
-using UnityEditor.Overlays;
-using UnityEngine.UI;
-using System;
+using UnityEngine;
 
-public class ToggleVisualGrid
+
+public static class ToggleVisualGrid
 {
-    public const string ToolbarButtonID = "ScriptingPractice/ToggleVisualGrid";
+    private const string PreferenceKey =
+        "ScriptingPractice.VisualGridEnabled";
 
-    [MenuItem("Tools/Toggle Grid", false)]
-    static void ToggleVG()
+    public static bool Enabled =>
+        EditorPrefs.GetBool(PreferenceKey, true);
+
+    [MainToolbarElement(
+        "ScriptingPractice/Toggle Visual Grid",
+        defaultDockPosition = MainToolbarDockPosition.Right)]
+    public static MainToolbarElement CreateGridButton()
     {
-        Toggle();
+        var content = new MainToolbarContent(
+            "Grid",
+            "Toggle the visual grid");
+
+        return new MainToolbarButton(content, ToggleGridButton);
+    }
+
+    private static void ToggleGridButton()
+    {
+        EditorPrefs.SetBool(PreferenceKey, !Enabled);
+        SceneView.RepaintAll();
+
+        BuildGridOverlay.RefreshGrid();
         
     }
-
-    private static void Toggle()
+public static class BuildGridOverlay
     {
-        Debug.Log("Toolbar grid button clicked");
+    public static void RefreshGrid()
+    {
+        
     }
-
+    
+    }
     
 }
