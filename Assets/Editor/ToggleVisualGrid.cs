@@ -18,7 +18,7 @@ public static class ToggleVisualGrid
     public static MainToolbarElement CreateGridButton()
     {
         var content = new MainToolbarContent(
-            "Grid",
+            "Toggle Visual Grid",
             "Toggle the visual grid");
 
         return new MainToolbarButton(content, ToggleGridButton);
@@ -28,17 +28,9 @@ public static class ToggleVisualGrid
     {
         EditorPrefs.SetBool(PreferenceKey, !Enabled);
         SceneView.RepaintAll();
+        UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+        
+    }
 
-        BuildGridOverlay.RefreshGrid();
-        
-    }
-public static class BuildGridOverlay
-    {
-    public static void RefreshGrid()
-    {
-        
-    }
-    
-    }
     
 }
