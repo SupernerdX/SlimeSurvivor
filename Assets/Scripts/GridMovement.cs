@@ -36,6 +36,7 @@ public class GridMovement : MonoBehaviour
 
     void Start()
     {
+        Debug.Log(GetComponent<MeshFilter>().mesh.vertexCount);
          baseScale = transform.localScale;
     }
 
