@@ -408,6 +408,12 @@ MonoBehaviour:
   otherSlime: {fileID: 3469287836986646383}
   StrechThreshold: 3
   consumeDuration: 2
+  relaxDuration: 1
+  isGrowing: 0
+  growthMultiplier: 2
+  jiggleFrequency: 1
+  jiggleSpeed: 1
+  jiggleStrength: 0.02
 --- !u!135 &1512417549
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -427,7 +433,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.05
+  m_Radius: 0.03
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1561591167
 GameObject:
@@ -610,7 +616,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ed2ea3dcd71d4d5409af04834791a547, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.984971
+      value: -4.234971
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ed2ea3dcd71d4d5409af04834791a547, type: 3}
       propertyPath: m_LocalPosition.y
@@ -686,7 +692,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7057724411103078091, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 4.25
       objectReference: {fileID: 0}
     - target: {fileID: 7057724411103078091, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: m_LocalPosition.y
@@ -724,6 +730,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7249578525924694049, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
+      propertyPath: landingRecoverDuration
+      value: 0.4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -734,6 +744,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1103135443960661777, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3469287836986646384}
+    - targetCorrespondingSourceObject: {fileID: 1103135443960661777, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3469287836986646389}
   m_SourcePrefab: {fileID: 100100000, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
 --- !u!114 &3469287836986646378
 MonoBehaviour:
@@ -750,6 +763,12 @@ MonoBehaviour:
   otherSlime: {fileID: 1512417547}
   StrechThreshold: 3
   consumeDuration: 2
+  relaxDuration: 1
+  isGrowing: 0
+  growthMultiplier: 2
+  jiggleFrequency: 10
+  jiggleSpeed: 0.2
+  jiggleStrength: 0.02
 --- !u!4 &3469287836986646383 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7057724411103078091, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
@@ -774,8 +793,35 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.05
+  m_Radius: 0.03
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!54 &3469287836986646389
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132148677692022}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
