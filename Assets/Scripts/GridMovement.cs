@@ -60,9 +60,8 @@ public class GridMovement : MonoBehaviour
         moveAlpha = Mathf.Clamp(moveAlpha, 0, 1);
         Vector3 newLocation = Vector3.Lerp(GridToWorld(CurrentLocation), GridToWorld(TargetLocation), moveAlpha);
         newLocation.y =BaseHeight + Mathf.Sin(moveAlpha * Mathf.PI) * jumpHeight;
-        float strechAmount = -Mathf.Cos((1- moveAlpha) * Mathf.PI * 2f) * strechFactor; 
-        currentStretchAmount = strechAmount;
-        ApplyScale(strechAmount);
+        currentStretchAmount = -Mathf.Cos((1- moveAlpha) * Mathf.PI * 2f) * strechFactor; 
+        ApplyScale(currentStretchAmount);
         transform.position = newLocation; 
 
         if(moveAlpha >= 1)
@@ -101,6 +100,11 @@ public class GridMovement : MonoBehaviour
     public Vector3 GetBaseScale()
     {
         return baseScale;
+    }
+
+    public float GetStretchAmount()
+    {
+        return currentStretchAmount;
     }
 
     private Vector3 GridToWorld(Vector2 gridLocation)

@@ -8,17 +8,19 @@ public class MeshDeformation : MonoBehaviour
     [SerializeField] private float relaxDuration;
     [SerializeField] private bool isGrowing;
     [SerializeField] private float growthMultiplier;
+    [SerializeField] private float heightEffectMultiplier = 1f;
 
-    [Header("Jiggle Settings")]
-    [SerializeField] private float jiggleFrequency = 1f;
-    [SerializeField] private float jiggleSpeed = 1f;
-    [SerializeField] private float jiggleStrength = 0.02f;
 
     private Mesh mesh;
     private GridMovement gridMovement;
     private bool HasBeenConsumed;
     private bool isRelaxing;
     private bool hasDeformedVertices;
+
+    private float minY; 
+    private float maxY;
+
+
 
     private float scaleAlpha;
     private float stretchAlpha;
@@ -27,7 +29,7 @@ public class MeshDeformation : MonoBehaviour
     private Vector3 targetScale;
 
     private Vector3 [] orginalVerticePostions;
-    private Vector3 [] StrechedVerticePostions;
+    private Vector3 [] StretchedVerticePostions;
     private Vector3 [] RelaxedVerticePostions;
 
 
@@ -37,8 +39,19 @@ public class MeshDeformation : MonoBehaviour
         mesh = GetComponent<MeshFilter>().mesh;
         gridMovement = GetComponent<GridMovement>();
         orginalVerticePostions = mesh.vertices;
-        StrechedVerticePostions = (Vector3[])orginalVerticePostions.Clone();
+        Debug.Log("Vertex count: " + orginalVerticePostions.Length + " | First vertex: " + orginalVerticePostions[0] + " | Local scale: " + transform.localScale);
+        StretchedVerticePostions = (Vector3[])orginalVerticePostions.Clone();
         RelaxedVerticePostions = (Vector3[])orginalVerticePostions.Clone();
+
+        minY = orginalVerticePostions[0].y;
+        maxY = orginalVerticePostions[0].y;
+
+        for(int i = 1; i < orginalVerticePostions.Length; i++)
+        {
+            minY = Mathf.Min(minY, orginalVerticePostions[i].y);
+            maxY = Mathf.Max(maxY, orginalVerticePostions[i].y);
+        }
+        Debug.Log("minY: " + minY + " maxY: " + maxY + " range: " + (maxY - minY));
 
         startScale = GetCurrentBaseScale();
         targetScale = Vector3.zero;
@@ -60,7 +73,7 @@ public class MeshDeformation : MonoBehaviour
         {
             if(!isRelaxing)
             {
-                RelaxedVerticePostions = (Vector3[])StrechedVerticePostions.Clone();
+                RelaxedVerticePostions = (Vector3[])StretchedVerticePostions.Clone();
                 relaxAlpha = 0f;
                 isRelaxing = true;
             }
@@ -93,30 +106,40 @@ public class MeshDeformation : MonoBehaviour
              stretchAlpha = Mathf.Clamp(stretchAlpha, 0, 1);
              Vector3 newVertexPos = Vector3.Lerp(VertexWorldPos, otherSlime.transform.position, stretchAlpha);
              Vector3 newLocalPos = gameObject.transform.InverseTransformPoint(newVertexPos);
-             StrechedVerticePostions[i] = newLocalPos;
+             StretchedVerticePostions[i] = newLocalPos;
             }
             else if(isRelaxing)
             {
-                StrechedVerticePostions[i] = Vector3.Lerp(RelaxedVerticePostions[i], localVertexPosition, bounceAlpha);
+                StretchedVerticePostions[i] = Vector3.Lerp(RelaxedVerticePostions[i], localVertexPosition, bounceAlpha);
             }
             else
             {
-                StrechedVerticePostions[i] = localVertexPosition;
+                StretchedVerticePostions[i] = localVertexPosition;
             }
 
-            /*
-            float noiseX = Mathf.PerlinNoise(localVertexPosition.x * jiggleFrequency + Time.time * jiggleSpeed, localVertexPosition.z * jiggleFrequency); 
-            float noiseY = Mathf.PerlinNoise(localVertexPosition.x * jiggleFrequency + Time.time * jiggleSpeed +100f, localVertexPosition.z * jiggleFrequency +100f);
-            float noiseZ = Mathf.PerlinNoise(localVertexPosition.x * jiggleFrequency + Time.time * jiggleSpeed +200f, localVertexPosition.z * jiggleFrequency +200f);
+            if(gridMovement != null)
+            {
+              float stretchAmount = gridMovement.GetStretchAmount();
+              float heightRatio = (localVertexPosition.y - minY) / (maxY - minY);
 
-            Vector3 jiggleOffset = new Vector3(
-                (noiseX - 0.5f) * jiggleStrength,
-                (noiseY - 0.5f) * jiggleStrength,
-                (noiseZ - 0.5f) * jiggleStrength
-            );
+                if(stretchAmount < 0f)
+                {
+                    float squashFalloff = 1f - heightRatio;
+                    float squashPush = squashFalloff * Mathf.Abs(stretchAmount) * heightEffectMultiplier;
 
-            StrechedVerticePostions[i] += jiggleOffset;
-            */
+                    // scale by how far this vertex already is from the vertical center axis
+                    StretchedVerticePostions[i].x += localVertexPosition.x * squashPush;
+                    StretchedVerticePostions[i].z += localVertexPosition.z * squashPush;
+                }
+                else if (stretchAmount > 0f)
+                {
+                    float stretchFalloff = heightRatio;
+                    StretchedVerticePostions[i].y += stretchFalloff * Mathf.Abs(stretchAmount) * heightEffectMultiplier;
+                    
+                }
+
+            }
+
         }
 
         if(isRelaxing && relaxAlpha >= 1f)
@@ -125,7 +148,7 @@ public class MeshDeformation : MonoBehaviour
             hasDeformedVertices = false;
         }
 
-        mesh.vertices = StrechedVerticePostions;
+        mesh.vertices = StretchedVerticePostions;
         mesh.RecalculateNormals();
 
         if(HasBeenConsumed)
