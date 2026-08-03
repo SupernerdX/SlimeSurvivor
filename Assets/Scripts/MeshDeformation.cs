@@ -8,9 +8,16 @@ public class MeshDeformation : MonoBehaviour
     [SerializeField] private float relaxDuration;
     [SerializeField] private bool isGrowing;
     [SerializeField] private float growthMultiplier;
+    
+    [Header("Squash and Stretch Multipliers")]
     [SerializeField] private float squashEffectMultiplier = 1f;
     [SerializeField] private float stretchEffectMultiplier = 1f;
 
+    [Header("wave ripple effect")]
+    [SerializeField, Min(0.01f)] private float waveSpeed = 1.2f;
+    [SerializeField, Min(0.01f)] private float waveDuration = 1f;
+    [SerializeField] private float waveWidth = 0.25f;
+    [SerializeField] private float waveStrength = 0.1f;
 
     private Mesh mesh;
     private GridMovement gridMovement;
@@ -21,6 +28,9 @@ public class MeshDeformation : MonoBehaviour
     private float minY; 
     private float maxY;
     private float maxHorizontalDistance;
+
+    private float waveFront; 
+    private bool isWaving;
 
 
 
@@ -132,6 +142,15 @@ public class MeshDeformation : MonoBehaviour
                 float stretchAmount = gridMovement.GetStretchAmount();
                 float heightRatio = (localVertexPosition.y - minY) / (maxY - minY);
 
+                //wave ripple effect
+                float waveIntensity = 0f;
+                if (isWaving)
+                {
+                    float waveDistance = Mathf.Abs(heightRatio - waveFront);
+                    waveIntensity = Mathf.Max(0f, 1f - waveDistance / waveWidth);
+                }
+
+
                 // Center falloff — same for both squash and stretch, purely horizontal
                 float horizontalDistance = Vector2.Distance(new Vector2(localVertexPosition.x, localVertexPosition.z), Vector2.zero);
                 float centerFalloff = 1f - (horizontalDistance / maxHorizontalDistance);
@@ -144,19 +163,43 @@ public class MeshDeformation : MonoBehaviour
                         float topWeight = heightRatio; // same shape as stretchFalloff — strong at top (maxY), weak at bottom (minY)
                         float combinedSquashFalloff = topWeight * adjustedCenterFalloff;
                         StretchedVerticePostions[i].y -= combinedSquashFalloff * Mathf.Abs(stretchAmount) * squashEffectMultiplier;
-
-                    // (your existing horizontal squash-push code for the bottom-widening effect can stay separate, still using plain squashFalloff)
-                    }
-                    else if (stretchAmount > 0f)
-                    {
-                        // Stretching (apex) — top-center pushes UP more than top-corners
-                        float stretchFalloff = heightRatio;
-                        float combinedStretchFalloff = stretchFalloff * adjustedCenterFalloff;
-                        StretchedVerticePostions[i].y += combinedStretchFalloff * stretchAmount * stretchEffectMultiplier;
-                    }
+                // Push the current height band radially outward as the wave travels
+                // from the bottom of the mesh to the top. Because every frame starts
+                // from the base deformation, vertices settle once the band passes.
+                Vector2 horizontalDirection = new Vector2(localVertexPosition.x, localVertexPosition.z);
+                if (horizontalDirection.sqrMagnitude > Mathf.Epsilon)
+                {
+                    horizontalDirection.Normalize();
+                    StretchedVerticePostions[i].x += horizontalDirection.x * waveIntensity * waveStrength;
+                    StretchedVerticePostions[i].z += horizontalDirection.y * waveIntensity * waveStrength;
                 }
-            }
 
+                // (your existing horizontal squash-push code for the bottom-widening effect can stay separate, still using plain squashFalloff)
+                }
+                else if (stretchAmount > 0f)
+                {
+                    // Stretching (apex) — top-center pushes UP more than top-corners
+                    float stretchFalloff = heightRatio;
+                    float combinedStretchFalloff = stretchFalloff * adjustedCenterFalloff;
+                    StretchedVerticePostions[i].y += combinedStretchFalloff * stretchAmount * stretchEffectMultiplier;
+                }
+
+                
+            }
+        }
+
+        if (isWaving)
+        {
+            float safeWaveDuration = Mathf.Max(waveDuration, 0.01f);
+            float safeWaveSpeed = Mathf.Max(waveSpeed, 0.01f);
+            waveFront += Time.deltaTime * safeWaveSpeed / safeWaveDuration;
+
+            // Let the complete band move past the top before ending the effect.
+            if (waveFront > 1f + waveWidth)
+            {
+                isWaving = false;
+            }
+        }
 
         if(isRelaxing && relaxAlpha >= 1f)
         {
@@ -235,5 +278,17 @@ public class MeshDeformation : MonoBehaviour
         }
 
         transform.localScale = newScale;
+    }
+
+    public void TriggerWaveRippleEffect()
+    {
+        waveFront = 0f;
+        isWaving = true;
+    }
+
+    public float GetWaveTravelDuration()
+    {
+        float safeWaveSpeed = Mathf.Max(waveSpeed, 0.01f);
+        return (1f + waveWidth) * Mathf.Max(waveDuration, 0.01f) / safeWaveSpeed;
     }
 }

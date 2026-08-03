@@ -24,6 +24,7 @@ public class GridMovement : MonoBehaviour
     private float landingRecoverAlpha;
     private float landingStartStretch;
     private Vector2 PendingDirection;
+    private MeshDeformation meshDeformation;
 
     private bool IsMoving; 
     private bool HasPendingInput;
@@ -47,6 +48,7 @@ public class GridMovement : MonoBehaviour
     {
        // Debug.Log(GetComponent<MeshFilter>().mesh.vertexCount);
          baseScale = transform.localScale;
+         meshDeformation = GetComponentInChildren<MeshDeformation>();
          currentStretchAmount = 0f;
          ApplyScale(0f);
     }
@@ -175,13 +177,15 @@ public class GridMovement : MonoBehaviour
         landingStartStretch = currentStretchAmount;
         landingRecoverAlpha = 0f;
         isRecoveringFromLanding = true;
+        meshDeformation?.TriggerWaveRippleEffect();
     }
 
     private void UpdateLandingRecovery()
     {
         if(!isRecoveringFromLanding) return;
 
-        float safeLandingRecoverDuration = Mathf.Max(landingRecoverDuration, Mathf.Epsilon);
+        float rippleDuration = meshDeformation != null ? meshDeformation.GetWaveTravelDuration() : 0f;
+        float safeLandingRecoverDuration = Mathf.Max(landingRecoverDuration, rippleDuration, Mathf.Epsilon);
         landingRecoverAlpha += Time.deltaTime / safeLandingRecoverDuration;
         landingRecoverAlpha = Mathf.Clamp01(landingRecoverAlpha);
         currentStretchAmount = Mathf.Lerp(landingStartStretch, 0f, landingRecoverAlpha);
