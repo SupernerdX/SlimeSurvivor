@@ -8,7 +8,8 @@ public class MeshDeformation : MonoBehaviour
     [SerializeField] private float relaxDuration;
     [SerializeField] private bool isGrowing;
     [SerializeField] private float growthMultiplier;
-    [SerializeField] private float heightEffectMultiplier = 1f;
+    [SerializeField] private float squashEffectMultiplier = 1f;
+    [SerializeField] private float stretchEffectMultiplier = 1f;
 
 
     private Mesh mesh;
@@ -19,6 +20,7 @@ public class MeshDeformation : MonoBehaviour
 
     private float minY; 
     private float maxY;
+    private float maxHorizontalDistance;
 
 
 
@@ -34,10 +36,11 @@ public class MeshDeformation : MonoBehaviour
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
+
     void Start()
     {
         mesh = GetComponent<MeshFilter>().mesh;
-        gridMovement = GetComponent<GridMovement>();
+        gridMovement = GetComponentInParent<GridMovement>();
         orginalVerticePostions = mesh.vertices;
         Debug.Log("Vertex count: " + orginalVerticePostions.Length + " | First vertex: " + orginalVerticePostions[0] + " | Local scale: " + transform.localScale);
         StretchedVerticePostions = (Vector3[])orginalVerticePostions.Clone();
@@ -52,6 +55,13 @@ public class MeshDeformation : MonoBehaviour
             maxY = Mathf.Max(maxY, orginalVerticePostions[i].y);
         }
         Debug.Log("minY: " + minY + " maxY: " + maxY + " range: " + (maxY - minY));
+
+        maxHorizontalDistance = 0f;
+        for (int i = 0; i < orginalVerticePostions.Length; i++)
+        {
+            float horizontalDist = Vector2.Distance(new Vector2(orginalVerticePostions[i].x, orginalVerticePostions[i].z), Vector2.zero);
+            maxHorizontalDistance = Mathf.Max(maxHorizontalDistance, horizontalDist);
+        }
 
         startScale = GetCurrentBaseScale();
         targetScale = Vector3.zero;
@@ -117,30 +127,36 @@ public class MeshDeformation : MonoBehaviour
                 StretchedVerticePostions[i] = localVertexPosition;
             }
 
-            if(gridMovement != null)
+           if (gridMovement != null)
             {
-              float stretchAmount = gridMovement.GetStretchAmount();
-              float heightRatio = (localVertexPosition.y - minY) / (maxY - minY);
+                float stretchAmount = gridMovement.GetStretchAmount();
+                float heightRatio = (localVertexPosition.y - minY) / (maxY - minY);
 
-                if(stretchAmount < 0f)
+                // Center falloff — same for both squash and stretch, purely horizontal
+                float horizontalDistance = Vector2.Distance(new Vector2(localVertexPosition.x, localVertexPosition.z), Vector2.zero);
+                float centerFalloff = 1f - (horizontalDistance / maxHorizontalDistance);
+                float minCenterEffect = 0.3f;
+                float adjustedCenterFalloff = Mathf.Lerp(minCenterEffect, 1f, centerFalloff);
+
+                if (stretchAmount < 0f)
                 {
-                    float squashFalloff = 1f - heightRatio;
-                    float squashPush = squashFalloff * Mathf.Abs(stretchAmount) * heightEffectMultiplier;
+                        // Squashing — TOP-center caves DOWN more than top-corners
+                        float topWeight = heightRatio; // same shape as stretchFalloff — strong at top (maxY), weak at bottom (minY)
+                        float combinedSquashFalloff = topWeight * adjustedCenterFalloff;
+                        StretchedVerticePostions[i].y -= combinedSquashFalloff * Mathf.Abs(stretchAmount) * squashEffectMultiplier;
 
-                    // scale by how far this vertex already is from the vertical center axis
-                    StretchedVerticePostions[i].x += localVertexPosition.x * squashPush;
-                    StretchedVerticePostions[i].z += localVertexPosition.z * squashPush;
+                    // (your existing horizontal squash-push code for the bottom-widening effect can stay separate, still using plain squashFalloff)
+                    }
+                    else if (stretchAmount > 0f)
+                    {
+                        // Stretching (apex) — top-center pushes UP more than top-corners
+                        float stretchFalloff = heightRatio;
+                        float combinedStretchFalloff = stretchFalloff * adjustedCenterFalloff;
+                        StretchedVerticePostions[i].y += combinedStretchFalloff * stretchAmount * stretchEffectMultiplier;
+                    }
                 }
-                else if (stretchAmount > 0f)
-                {
-                    float stretchFalloff = heightRatio;
-                    StretchedVerticePostions[i].y += stretchFalloff * Mathf.Abs(stretchAmount) * heightEffectMultiplier;
-                    
-                }
-
             }
 
-        }
 
         if(isRelaxing && relaxAlpha >= 1f)
         {
@@ -159,7 +175,7 @@ public class MeshDeformation : MonoBehaviour
             ApplyBaseScale(newLocalScale);
             if(scaleAlpha >= 1f)
             {
-                Destroy(gameObject);
+                Destroy(gridMovement != null ? gridMovement.gameObject : gameObject);
             }
         }
         else if(isGrowing)
@@ -198,11 +214,6 @@ public class MeshDeformation : MonoBehaviour
             targetScale = startScale * growthMultiplier;
         }
 
-            
-
-
-    
-        
     }
 
     public Vector3 GetCurrentBaseScale()

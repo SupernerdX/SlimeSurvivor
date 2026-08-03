@@ -8,6 +8,7 @@ public class GridMovement : MonoBehaviour
     [SerializeField] private int gridSize = 1;
     [SerializeField] private float moveDuration = 0.5f;
     [SerializeField] private float strechFactor = 0.2f;
+    [SerializeField] private float jumpAnticipationDuration = 0.1f;
     [SerializeField] private float landingRecoverDuration = 0.08f;
     
     [SerializeField] private InputAction moveAction;
@@ -18,12 +19,15 @@ public class GridMovement : MonoBehaviour
     private float BaseHeight;
     private Vector3 baseScale;
     private float currentStretchAmount;
+    private float jumpAnticipationAlpha;
+    private float anticipationStartStretch;
     private float landingRecoverAlpha;
     private float landingStartStretch;
     private Vector2 PendingDirection;
 
     private bool IsMoving; 
     private bool HasPendingInput;
+    private bool isAnticipating;
     private bool isRecoveringFromLanding;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -50,6 +54,12 @@ public class GridMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(isAnticipating)
+        {
+            UpdateJumpAnticipation();
+            return;
+        }
+
         if(!IsMoving)
         {
             UpdateLandingRecovery();
@@ -71,12 +81,9 @@ public class GridMovement : MonoBehaviour
             BeginLandingRecovery();
             if(HasPendingInput)
             {
-                TargetLocation = CurrentLocation + PendingDirection;
-                BaseHeight = transform.position.y;
-                IsMoving = true; 
+                Vector2 queuedDirection = PendingDirection;
                 HasPendingInput = false;
-                isRecoveringFromLanding = false;
-                moveAlpha = 0;
+                BeginJumpAnticipation(queuedDirection);
             }
         }
     }
@@ -88,6 +95,10 @@ public class GridMovement : MonoBehaviour
         if(IsMoving)
         {
             strechAmount = -Mathf.Cos((1f - moveAlpha) * Mathf.PI * 2f) * strechFactor;
+        }
+        else if(isAnticipating)
+        {
+            strechAmount = currentStretchAmount;
         }
         else if(isRecoveringFromLanding)
         {
@@ -112,6 +123,43 @@ public class GridMovement : MonoBehaviour
          Vector3 newWorldLocation = new Vector3(gridLocation.x * gridSize, 0f, gridLocation.y * gridSize);
 
          return newWorldLocation;
+    }
+
+    private float EvaluateStretchAmount(float alpha)
+    {
+        // Start at neutral, then animate through squash -> stretch -> squash during the move.
+        return -Mathf.Sin(alpha * Mathf.PI * 3f) * strechFactor;
+    }
+
+    private void BeginJumpAnticipation(Vector2 direction)
+    {
+        if(direction == Vector2.zero) return;
+
+        TargetLocation = CurrentLocation + direction;
+        BaseHeight = transform.position.y;
+        anticipationStartStretch = currentStretchAmount;
+        jumpAnticipationAlpha = 0f;
+        IsMoving = false;
+        isAnticipating = true;
+        isRecoveringFromLanding = false;
+    }
+
+    private void UpdateJumpAnticipation()
+    {
+        float safeAnticipationDuration = Mathf.Max(jumpAnticipationDuration, Mathf.Epsilon);
+        jumpAnticipationAlpha += Time.deltaTime / safeAnticipationDuration;
+        jumpAnticipationAlpha = Mathf.Clamp01(jumpAnticipationAlpha);
+
+        float smoothAlpha = Mathf.SmoothStep(0f, 1f, jumpAnticipationAlpha);
+        currentStretchAmount = Mathf.Lerp(anticipationStartStretch, -strechFactor, smoothAlpha);
+        ApplyScale(currentStretchAmount);
+
+        if(jumpAnticipationAlpha >= 1f)
+        {
+            isAnticipating = false;
+            IsMoving = true;
+            moveAlpha = 0f;
+        }
     }
 
     private void ApplyScale(float strechAmount)
@@ -149,18 +197,16 @@ public class GridMovement : MonoBehaviour
 
     private void OnMoved(InputAction.CallbackContext context)
     {
-        if (!IsMoving && !HasPendingInput)
-        {
         Vector2 moveInput = context.ReadValue<Vector2>();
-        TargetLocation = CurrentLocation + moveInput;
-        BaseHeight = transform.position.y;
-        IsMoving = true; 
-        isRecoveringFromLanding = false;
-        moveAlpha = 0;
+        if(moveInput == Vector2.zero) return;
+
+        if (!IsMoving && !isAnticipating && !HasPendingInput)
+        {
+            BeginJumpAnticipation(moveInput);
         } 
         else
         {
-            PendingDirection = context.ReadValue<Vector2>();
+            PendingDirection = moveInput;
             HasPendingInput = true;
         }
 
