@@ -70,9 +70,9 @@ MonoBehaviour:
   jumpHeight: 2
   gridSize: 1
   moveDuration: 0.7
-  strechFactor: 0.2
-  jumpAnticipationDuration: 0.1
+  jumpAnticipationDuration: 0.3
   landingRecoverDuration: 0.4
+  strechFactor: 0.3
   moveAction:
     m_Name: Move
     m_Type: 0
@@ -225,15 +225,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f17488e3818bd34ba19cfa3b6a30b05, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeshDeformation
   otherSlime: {fileID: 0}
   StrechThreshold: 3
   consumeDuration: 2
-  relaxDuration: 1
+  relaxDuration: 0.8
   isGrowing: 0
   growthMultiplier: 2
-  heightEffectMultiplier: 0.8
+  squashEffectMultiplier: 2
+  stretchEffectMultiplier: 1
+  dragStifness: 91.2
+  dragDamping: 0.037
+  waveTravelRate: 2.15
+  waveWidth: 0.7
+  waveStrength: 0.1
 --- !u!135 &5712776234671569592
 SphereCollider:
   m_ObjectHideFlags: 0

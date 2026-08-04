@@ -7,9 +7,12 @@ public class GridMovement : MonoBehaviour
     [SerializeField] private float jumpHeight = 2f;
     [SerializeField] private int gridSize = 1;
     [SerializeField] private float moveDuration = 0.5f;
-    [SerializeField] private float strechFactor = 0.2f;
     [SerializeField] private float jumpAnticipationDuration = 0.1f;
     [SerializeField] private float landingRecoverDuration = 0.08f;
+
+    [Header("Whole mesh squash and stretch")]
+    [Tooltip("Whole-object squash/stretch driven by this script's own movement timing (jump, anticipation, landing). Separate from MeshDeformation's per-vertex squash/stretch multipliers, which weight and refine this same value further.")]
+    [SerializeField] private float strechFactor = 0.2f;
     
     [SerializeField] private InputAction moveAction;
 
@@ -48,6 +51,7 @@ public class GridMovement : MonoBehaviour
     {
        // Debug.Log(GetComponent<MeshFilter>().mesh.vertexCount);
          baseScale = transform.localScale;
+         CurrentLocation = transform.localPosition;
          meshDeformation = GetComponentInChildren<MeshDeformation>();
          currentStretchAmount = 0f;
          ApplyScale(0f);
@@ -115,6 +119,11 @@ public class GridMovement : MonoBehaviour
         return baseScale;
     }
 
+    public Vector3 GetRootPosition()
+    {
+        return GridToWorld(CurrentLocation);
+    }
+
     public float GetStretchAmount()
     {
         return currentStretchAmount;
@@ -125,12 +134,6 @@ public class GridMovement : MonoBehaviour
          Vector3 newWorldLocation = new Vector3(gridLocation.x * gridSize, 0f, gridLocation.y * gridSize);
 
          return newWorldLocation;
-    }
-
-    private float EvaluateStretchAmount(float alpha)
-    {
-        // Start at neutral, then animate through squash -> stretch -> squash during the move.
-        return -Mathf.Sin(alpha * Mathf.PI * 3f) * strechFactor;
     }
 
     private void BeginJumpAnticipation(Vector2 direction)
