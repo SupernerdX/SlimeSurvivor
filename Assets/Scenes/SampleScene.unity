@@ -413,8 +413,7 @@ MonoBehaviour:
   growthMultiplier: 2
   squashEffectMultiplier: 1
   stretchEffectMultiplier: 1
-  waveSpeed: 1.2
-  waveDuration: 1
+  waveTravelRate: 1.2
   waveWidth: 0.25
   waveStrength: 0.1
 --- !u!135 &1512417549
@@ -690,7 +689,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3111143490808948983, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: waveWidth
-      value: 0.7
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3111143490808948983, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: otherSlime
@@ -699,6 +698,14 @@ PrefabInstance:
     - target: {fileID: 3111143490808948983, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: waveDuration
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3111143490808948983, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
+      propertyPath: waveStrength
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3111143490808948983, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
+      propertyPath: waveTravelRate
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3111143490808948983, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: squashEffectMultiplier
@@ -751,6 +758,10 @@ PrefabInstance:
     - target: {fileID: 7249578525924694049, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: strechFactor
       value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7249578525924694049, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
+      propertyPath: jumpAnticipationDuration
+      value: 0.2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

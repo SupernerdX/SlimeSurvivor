@@ -14,8 +14,7 @@ public class MeshDeformation : MonoBehaviour
     [SerializeField] private float stretchEffectMultiplier = 1f;
 
     [Header("wave ripple effect")]
-    [SerializeField, Min(0.01f)] private float waveSpeed = 1.2f;
-    [SerializeField, Min(0.01f)] private float waveDuration = 1f;
+    [SerializeField, Min(0.01f)] private float waveTravelRate = 1.2f;
     [SerializeField] private float waveWidth = 0.25f;
     [SerializeField] private float waveStrength = 0.1f;
 
@@ -190,9 +189,8 @@ public class MeshDeformation : MonoBehaviour
 
         if (isWaving)
         {
-            float safeWaveDuration = Mathf.Max(waveDuration, 0.01f);
-            float safeWaveSpeed = Mathf.Max(waveSpeed, 0.01f);
-            waveFront += Time.deltaTime * safeWaveSpeed / safeWaveDuration;
+            float safeWaveTravelRate = Mathf.Max(waveTravelRate, 0.01f);
+            waveFront += Time.deltaTime * safeWaveTravelRate;
 
             // Let the complete band move past the top before ending the effect.
             if (waveFront > 1f + waveWidth)
@@ -288,7 +286,7 @@ public class MeshDeformation : MonoBehaviour
 
     public float GetWaveTravelDuration()
     {
-        float safeWaveSpeed = Mathf.Max(waveSpeed, 0.01f);
-        return (1f + waveWidth) * Mathf.Max(waveDuration, 0.01f) / safeWaveSpeed;
+        float safeWaveTravelRate = Mathf.Max(waveTravelRate, 0.01f);
+        return (1f + waveWidth) / safeWaveTravelRate;
     }
 }
