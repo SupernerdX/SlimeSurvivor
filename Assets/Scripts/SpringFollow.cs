@@ -4,33 +4,38 @@ public class SpringFollow : MonoBehaviour
 {
     [SerializeField] private Transform target;
     [Range(0f, 200f)] [SerializeField] private float dragStifness;
-    [Range(0f, 1f)] [SerializeField] private float dragDamping;
-    
+    [Range(0f, 30f)] [SerializeField] private float dragDamping;
+    [SerializeField] private float SuspensionHeight = 0.5f;
+
     private Vector3 velocity;
     private Vector3 restOffset;
-    private Vector3 intialScale;
+    private Vector3 intialLocalPosition;
+    private Vector3 intialTargetScale;
+  
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        restOffset = transform.position - target.position;
-        intialScale = target.localScale;
+        intialLocalPosition = transform.localPosition;
+        intialTargetScale = target.localScale;
+
     }
 
     // Update is called once per frame
-    void Update()
+    void LateUpdate()
     {
         UpdateDrag();
-        Debug.Log("scaleY: " + target.localScale.y);
-    }
+    }   
 
     private void UpdateDrag()
     {
-        float scaleRatio = transform.localScale.y / intialScale.y;
-        Vector3 scaledOffset = new Vector3 (restOffset.x, restOffset.y * scaleRatio, restOffset.z);
-        Vector3 gap = target.position + scaledOffset - transform.position;
-        velocity += dragStifness * Time.deltaTime * gap;
-        velocity *= 1f - dragDamping;
-        transform.position += velocity * Time.deltaTime; 
+        float scaleRatio = target.localScale.y / intialTargetScale.y;
+        float verticalAdjustment = (scaleRatio - 1f) * SuspensionHeight;
+        Vector3 desiredLocalPosition = intialLocalPosition;
+        desiredLocalPosition.y += verticalAdjustment;
+        Vector3 gap = desiredLocalPosition  - transform.localPosition;
+        velocity += dragStifness * gap * Time.deltaTime;
+        velocity *= Mathf.Exp(-dragDamping * Time.deltaTime);
+        transform.localPosition += velocity * Time.deltaTime; 
     }
 }
