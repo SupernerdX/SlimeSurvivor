@@ -74,7 +74,8 @@ public class GridMovement : MonoBehaviour
         
         moveAlpha += Time.deltaTime / moveDuration;
         moveAlpha = Mathf.Clamp(moveAlpha, 0, 1);
-        Vector3 newLocation = Vector3.Lerp(GridToWorld(CurrentLocation), GridToWorld(TargetLocation), moveAlpha);
+        float smoothMoveAlpha = Mathf.SmoothStep(0f, 1f, moveAlpha);
+        Vector3 newLocation = Vector3.Lerp(GridToWorld(CurrentLocation), GridToWorld(TargetLocation), smoothMoveAlpha);
         newLocation.y =BaseHeight + Mathf.Sin(moveAlpha * Mathf.PI) * jumpHeight;
         currentStretchAmount = -Mathf.Cos((1- moveAlpha) * Mathf.PI * 2f) * strechFactor; 
         ApplyScale(currentStretchAmount);
