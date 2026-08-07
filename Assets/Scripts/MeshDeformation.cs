@@ -26,6 +26,9 @@ public class MeshDeformation : MonoBehaviour
     private bool isRelaxing;
     private bool hasDeformedVertices;
 
+    private SuspendBone[] suspendedBones;
+    private bool bonesAreReleasing;
+
     private float minY; 
     private float maxY;
     private float maxHorizontalDistance;
@@ -60,6 +63,8 @@ public class MeshDeformation : MonoBehaviour
         orginalVerticePositions = mesh.vertices;
         trailingPosition = gridMovement != null ? gridMovement.transform.position : Vector3.zero;
 
+        suspendedBones = GetComponentsInChildren<SuspendBone>();
+
         StretchedVerticePositions = (Vector3[])orginalVerticePositions.Clone();
         RelaxedVerticePositions = (Vector3[])orginalVerticePositions.Clone();
 
@@ -88,8 +93,11 @@ public class MeshDeformation : MonoBehaviour
     {
         bounceAlpha = UpdateRelaxState();
         DeformVertices(bounceAlpha);
+        UpdateSuspendedBones();
         UpdateWaveFront();
         UpdateDragOffset();
+        
+
 
 
         if(isRelaxing && relaxAlpha >= 1f)
@@ -288,7 +296,34 @@ public class MeshDeformation : MonoBehaviour
 
         StretchedVerticePositions[i] = vertex;
                 
-    }            
+    }   
+    private void UpdateSuspendedBones()
+    {
+        bool isDeforming = Mathf.Abs(gridMovement.GetStretchAmount()) > 0.05f || dragOffset.magnitude > 0.05f;
+       // Debug.Log("isDeforming: " + isDeforming + " | dragOffset mag: " + dragOffset.magnitude);
+
+        if(isDeforming)
+        {
+            bonesAreReleasing = false;
+            foreach(var bone in suspendedBones)
+            {
+                Vector3 target = bone.GetRestPosition() + dragOffset * bone.GetHeightRatio();
+                // Adjust the vertical position based on the stretch amount
+                target.y += gridMovement.GetStretchAmount() * bone.GetHeightRatio() * 0.5f; 
+                bone.SnapTo(target);
+            }
+
+        }
+        else if(!bonesAreReleasing)
+        {
+            bonesAreReleasing = true;
+            foreach(var bone in suspendedBones)
+            {
+                bone.BeginRelease();
+                Debug.Log("Bone rest: " + bone.GetRestPosition() + " | Bone current: " + bone.transform.localPosition);
+            }
+        }
+    }     
     public void TriggerWaveRippleEffect()
     {
         waveFront = 0f;
