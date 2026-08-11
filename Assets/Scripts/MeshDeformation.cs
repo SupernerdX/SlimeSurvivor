@@ -63,13 +63,13 @@ public class MeshDeformation : MonoBehaviour
         orginalVerticePositions = mesh.vertices;
         trailingPosition = gridMovement != null ? gridMovement.transform.position : Vector3.zero;
 
-        suspendedBones = GetComponentsInChildren<SuspendBone>();
-
         StretchedVerticePositions = (Vector3[])orginalVerticePositions.Clone();
         RelaxedVerticePositions = (Vector3[])orginalVerticePositions.Clone();
 
         minY = orginalVerticePositions[0].y;
         maxY = orginalVerticePositions[0].y;
+
+        
 
         for(int i = 1; i < orginalVerticePositions.Length; i++)
         {
@@ -87,6 +87,11 @@ public class MeshDeformation : MonoBehaviour
 
         startScale = GetCurrentBaseScale();
         targetScale = Vector3.zero;
+        suspendedBones = GetComponentsInChildren<SuspendBone>();
+        foreach(var bone in suspendedBones)
+        {
+            bone.SetBounds(minY, maxY);
+        }
     }
 
     void Update()
@@ -159,6 +164,9 @@ public class MeshDeformation : MonoBehaviour
         }
 
     }
+
+    public float GetMinY() => minY;
+    public float GetMaxY() => maxY;
 
     public Vector3 GetCurrentBaseScale()
     {
@@ -299,7 +307,9 @@ public class MeshDeformation : MonoBehaviour
     }   
     private void UpdateSuspendedBones()
     {
-        bool isDeforming = Mathf.Abs(gridMovement.GetStretchAmount()) > 0.05f || dragOffset.magnitude > 0.05f;
+        if(gridMovement == null) return;
+
+        bool isDeforming = Mathf.Abs(gridMovement.GetStretchAmount()) > 0.2f || dragOffset.magnitude > 0.2f;
        // Debug.Log("isDeforming: " + isDeforming + " | dragOffset mag: " + dragOffset.magnitude);
 
         if(isDeforming)
@@ -309,7 +319,8 @@ public class MeshDeformation : MonoBehaviour
             {
                 Vector3 target = bone.GetRestPosition() + dragOffset * bone.GetHeightRatio();
                 // Adjust the vertical position based on the stretch amount
-                target.y += gridMovement.GetStretchAmount() * bone.GetHeightRatio() * 0.5f; 
+                target.y += gridMovement.GetStretchAmount() * bone.GetHeightRatio() * squashEffectMultiplier; 
+                target.y = Mathf.Clamp(target.y, minY, maxY);
                 bone.SnapTo(target);
             }
 
@@ -320,7 +331,7 @@ public class MeshDeformation : MonoBehaviour
             foreach(var bone in suspendedBones)
             {
                 bone.BeginRelease();
-                Debug.Log("Bone rest: " + bone.GetRestPosition() + " | Bone current: " + bone.transform.localPosition);
+                //Debug.Log("Bone rest: " + bone.GetRestPosition() + " | Bone current: " + bone.transform.localPosition);
             }
         }
     }     

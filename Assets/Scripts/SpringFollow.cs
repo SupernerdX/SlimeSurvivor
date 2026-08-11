@@ -3,7 +3,7 @@ using UnityEngine;
 public class SpringFollow : MonoBehaviour
 {
     [Range(0f, 200f)] [SerializeField] private float dragStifness;
-    [Range(0f, 30f)] [SerializeField] private float dragDamping;
+    [Range(0f, 1f)] [SerializeField] private float dragDamping;
 
 
     private Vector3 velocity;
@@ -42,4 +42,7 @@ public class SpringFollow : MonoBehaviour
     {
         isReleasing = true;
     }
+
+    public Vector3 GetLocalPosition() => transform.localPosition;
+    public void SetLocalPosition(Vector3 position) => transform.localPosition = position;
 }
