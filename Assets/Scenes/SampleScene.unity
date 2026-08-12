@@ -1177,7 +1177,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3111143490808948983, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: squashEffectMultiplier
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7057724411103078091, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1225,7 +1225,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7249578525924694049, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: strechFactor
-      value: 0.5
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 7249578525924694049, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       propertyPath: landingRecoverDuration
