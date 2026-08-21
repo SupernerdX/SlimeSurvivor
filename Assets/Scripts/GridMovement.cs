@@ -97,6 +97,17 @@ public class GridMovement : MonoBehaviour
     
     public void UpdateBaseScale(Vector3 newBaseScale)
     {
+        if(meshDeformation != null)
+        {
+            float deltaY = -meshDeformation.MinY *(newBaseScale.y - baseScale.y);
+            transform.position += new Vector3 (0f, deltaY, 0f);
+            
+            if(IsMoving)
+            {
+                BaseHeight += deltaY;
+            }
+        }
+
         baseScale = newBaseScale;
         float strechAmount = 0f;
         if(IsMoving)

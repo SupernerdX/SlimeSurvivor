@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 620fa77cb88be0047be67d4690931c6a, type: 3}
+  m_Name: SuspendedItemsSet
+  m_EditorClassIdentifier: Assembly-CSharp::SuspendedItemsSet
+  itemPrefabs:
+  - {fileID: 3464219448263963566, guid: 9ee1cf2ca04c34ed3881bf85124b593c, type: 3}
+  - {fileID: 6711433825023835400, guid: a44a170464eda476a9dcff94d8e39b72, type: 3}
+  - {fileID: 5088365217158276387, guid: cd63faccbd2f64adfb8afcc49b9c2889, type: 3}
+  - {fileID: 2112782391448227980, guid: bf3580c5657ab41adbda83926c0f8909, type: 3}
+  - {fileID: 4916460325720917807, guid: a7df11a0614e24456b68052a9fe1e927, type: 3}
+  - {fileID: 4904122685736021408, guid: 0f3fdfe5af85443efa031aeff50ca94c, type: 3}
+  - {fileID: 4904122685736021408, guid: 0f3fdfe5af85443efa031aeff50ca94c, type: 3}

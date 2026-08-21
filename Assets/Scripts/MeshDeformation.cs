@@ -29,8 +29,12 @@ public class MeshDeformation : MonoBehaviour
     private SuspendBone[] suspendedBones;
     private bool bonesAreReleasing;
 
-    private float minY; 
+    public float MinY {get; private set;}
     private float maxY;
+    private float minX;
+    private float maxX;
+    private float minZ;
+    private float maxZ;
     private float maxHorizontalDistance;
 
     private float waveFront; 
@@ -55,28 +59,20 @@ public class MeshDeformation : MonoBehaviour
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-
-    void Start()
+    void Awake()
     {
         mesh = GetComponent<MeshFilter>().mesh;
-        gridMovement = GetComponentInParent<GridMovement>();
         orginalVerticePositions = mesh.vertices;
+        CalculateBounds();
+    }
+    void Start()
+    {
+       
+        gridMovement = GetComponentInParent<GridMovement>();
         trailingPosition = gridMovement != null ? gridMovement.transform.position : Vector3.zero;
-
         StretchedVerticePositions = (Vector3[])orginalVerticePositions.Clone();
         RelaxedVerticePositions = (Vector3[])orginalVerticePositions.Clone();
 
-        minY = orginalVerticePositions[0].y;
-        maxY = orginalVerticePositions[0].y;
-
-        
-
-        for(int i = 1; i < orginalVerticePositions.Length; i++)
-        {
-            minY = Mathf.Min(minY, orginalVerticePositions[i].y);
-            maxY = Mathf.Max(maxY, orginalVerticePositions[i].y);
-        }
-        
 
         maxHorizontalDistance = 0f;
         for (int i = 0; i < orginalVerticePositions.Length; i++)
@@ -90,7 +86,7 @@ public class MeshDeformation : MonoBehaviour
         suspendedBones = GetComponentsInChildren<SuspendBone>();
         foreach(var bone in suspendedBones)
         {
-            bone.SetBounds(minY, maxY);
+            bone.SetBounds(GetBounds());
         }
     }
 
@@ -138,6 +134,8 @@ public class MeshDeformation : MonoBehaviour
         }
     }
 
+    
+
    
 
     void OnTriggerEnter(Collider other)
@@ -165,7 +163,7 @@ public class MeshDeformation : MonoBehaviour
 
     }
 
-    public float GetMinY() => minY;
+    public float GetMinY() => MinY;
     public float GetMaxY() => maxY;
 
     public Vector3 GetCurrentBaseScale()
@@ -257,8 +255,8 @@ public class MeshDeformation : MonoBehaviour
     {
         
         float stretchAmount = gridMovement.GetStretchAmount();
-        float heightRange = Mathf.Max(maxY - minY, Mathf.Epsilon);
-        float heightRatio = (localVertexPosition.y - minY) / heightRange;
+        float heightRange = Mathf.Max(maxY - MinY, Mathf.Epsilon);
+        float heightRatio = (localVertexPosition.y - MinY) / heightRange;
 
         //wave ripple effect
         float waveIntensity = 0f;
@@ -305,6 +303,37 @@ public class MeshDeformation : MonoBehaviour
         StretchedVerticePositions[i] = vertex;
                 
     }   
+    private void CalculateBounds()
+    {
+        MinY = orginalVerticePositions[0].y;
+        maxY = orginalVerticePositions[0].y;
+
+        minX = orginalVerticePositions[0].x;
+        maxX = orginalVerticePositions[0].x;
+
+        minZ = orginalVerticePositions[0].z;
+        maxZ = orginalVerticePositions[0].z;
+
+        
+        for(int i = 1; i < orginalVerticePositions.Length; i++)
+        {
+            MinY = Mathf.Min(MinY, orginalVerticePositions[i].y);
+            maxY = Mathf.Max(maxY, orginalVerticePositions[i].y);
+            minX = Mathf.Min(minX, orginalVerticePositions[i].x);
+            maxX = Mathf.Max(maxX, orginalVerticePositions[i].x);
+            minZ = Mathf.Min(minZ, orginalVerticePositions[i].z);
+            maxZ = Mathf.Max(maxZ, orginalVerticePositions[i].z);
+        }
+
+    }
+    public Bounds GetBounds()
+    {
+        Vector3 min = new Vector3(minX, MinY, minZ);
+        Vector3 max = new Vector3(maxX, maxY, maxZ);
+        Vector3 center = (min + max) / 2;
+        Vector3 size = max - min;
+        return new Bounds(center, size);
+    }
     private void UpdateSuspendedBones()
     {
         if(gridMovement == null) return;
@@ -320,7 +349,7 @@ public class MeshDeformation : MonoBehaviour
                 Vector3 target = bone.GetRestPosition() + dragOffset * bone.GetHeightRatio();
                 // Adjust the vertical position based on the stretch amount
                 target.y += gridMovement.GetStretchAmount() * bone.GetHeightRatio() * squashEffectMultiplier; 
-                target.y = Mathf.Clamp(target.y, minY, maxY);
+                target.y = Mathf.Clamp(target.y, MinY, maxY);
                 bone.SnapTo(target);
             }
 
