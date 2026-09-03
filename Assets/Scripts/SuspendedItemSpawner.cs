@@ -103,6 +103,21 @@ public class SuspendedItemSpawner : MonoBehaviour
         return true;
     }
 
+    public List<SuspendBone> GetSuspendedBones()
+    {
+        List<SuspendBone> bones = new List<SuspendBone>();
+
+        foreach(var slot in slots)
+        {
+            SuspendBone bone = slot.slotObject.GetComponent<SuspendBone>();
+            if(bone != null)
+            {
+                bones.Add(bone);
+            }
+        }
+        return bones;
+    }
+
     private void OnDrawGizmos()
     {
         if(spawnerBounds.size == Vector3.zero) return;

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class MeshDeformation : MonoBehaviour
 {
@@ -22,11 +23,11 @@ public class MeshDeformation : MonoBehaviour
 
     private Mesh mesh;
     private GridMovement gridMovement;
+    private SuspendedItemSpawner suspendedItemSpawner;
     private bool HasBeenConsumed;
     private bool isRelaxing;
     private bool hasDeformedVertices;
 
-    private SuspendBone[] suspendedBones;
     private bool bonesAreReleasing;
 
     public float MinY {get; private set;}
@@ -69,6 +70,8 @@ public class MeshDeformation : MonoBehaviour
     {
        
         gridMovement = GetComponentInParent<GridMovement>();
+        suspendedItemSpawner = GetComponent<SuspendedItemSpawner>();
+
         trailingPosition = gridMovement != null ? gridMovement.transform.position : Vector3.zero;
         StretchedVerticePositions = (Vector3[])orginalVerticePositions.Clone();
         RelaxedVerticePositions = (Vector3[])orginalVerticePositions.Clone();
@@ -83,11 +86,6 @@ public class MeshDeformation : MonoBehaviour
 
         startScale = GetCurrentBaseScale();
         targetScale = Vector3.zero;
-        suspendedBones = GetComponentsInChildren<SuspendBone>();
-        foreach(var bone in suspendedBones)
-        {
-            bone.SetBounds(GetBounds());
-        }
     }
 
     void Update()
@@ -336,6 +334,8 @@ public class MeshDeformation : MonoBehaviour
     }
     private void UpdateSuspendedBones()
     {
+        List<SuspendBone> suspendedBones = suspendedItemSpawner.GetSuspendedBones();
+
         if(gridMovement == null) return;
 
         bool isDeforming = Mathf.Abs(gridMovement.GetStretchAmount()) > 0.2f || dragOffset.magnitude > 0.2f;
