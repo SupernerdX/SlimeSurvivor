@@ -126,20 +126,13 @@ public class GridMovement : MonoBehaviour
         ApplyScale(strechAmount);
     }
 
-    public Vector3 GetBaseScale()
-    {
-        return baseScale;
-    }
+    public Vector3 GetBaseScale() => baseScale;
 
-    public Vector3 GetRootPosition()
-    {
-        return GridToWorld(CurrentLocation);
-    }
+    public Vector3 GetRootPosition() => GridToWorld(CurrentLocation);
 
-    public float GetStretchAmount()
-    {
-        return currentStretchAmount;
-    }
+    public float GetStretchAmount() => currentStretchAmount;
+
+    public bool GetIsMoving() => IsMoving;
 
     private Vector3 GridToWorld(Vector2 gridLocation)
     {

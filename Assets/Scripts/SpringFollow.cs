@@ -42,6 +42,10 @@ public class SpringFollow : MonoBehaviour
     {
         isReleasing = true;
     }
+    public void ZeroVelocityY()
+    {
+        velocity.y = 0f;
+    }
 
     public Vector3 GetLocalPosition() => transform.localPosition;
     public void SetLocalPosition(Vector3 position) => transform.localPosition = position;

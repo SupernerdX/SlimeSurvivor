@@ -64,7 +64,7 @@ public class SuspendedItemSpawner : MonoBehaviour
                 if(CheckIsValidPosition(spawnPosition))
                 {
                     foundValidPostion = true;
-                    Debug.Log("Local candidate Y: " + spawnPosition.y);
+                    Debug.Log("Local candidate Y: " + spawnPosition.y + " - Valid: " + CheckIsValidPosition(spawnPosition));
                     break;
                 }
                     
@@ -86,6 +86,12 @@ public class SuspendedItemSpawner : MonoBehaviour
     {
         GameObject randoPrefab = suspendedItemsSet.itemPrefabs[Random.Range(0, suspendedItemsSet.itemPrefabs.Length)];
         Instantiate(randoPrefab, targetObject.transform.position,Quaternion.identity, targetObject.transform);
+
+        SuspendBone bone = targetObject.GetComponent<SuspendBone>();
+        if (bone != null)
+        {
+            bone.OnModelAttached();
+        }
     }
 
     private bool CheckIsValidPosition(Vector3 candidate)
@@ -109,6 +115,7 @@ public class SuspendedItemSpawner : MonoBehaviour
 
         foreach(var slot in slots)
         {
+            if(slot.slotObject == null) continue;
             SuspendBone bone = slot.slotObject.GetComponent<SuspendBone>();
             if(bone != null)
             {
@@ -116,6 +123,22 @@ public class SuspendedItemSpawner : MonoBehaviour
             }
         }
         return bones;
+    }
+
+    public Bounds GetSpawnerBounds() => spawnerBounds;
+
+    public void ResetSpawner()
+    {
+        foreach(var slot in slots)
+        {
+            if(slot.slotObject != null)
+            {
+                Destroy(slot.slotObject);
+            }
+        }
+        slots.Clear();
+        spawnerBounds = CollapseBounds(safetyMargin);
+        CreateSlots(batchCount);
     }
 
     private void OnDrawGizmos()
