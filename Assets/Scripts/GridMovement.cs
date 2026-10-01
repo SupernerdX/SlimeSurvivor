@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem;
+
 #if UNITY_EDITOR
 using UnityEditor; 
 #endif
@@ -23,14 +25,10 @@ public class GridMovement : MonoBehaviour
     [Header("Whole mesh squash and stretch")]
     [Tooltip("Whole-object squash/stretch driven by this script's own movement timing (jump, anticipation, landing). Separate from MeshDeformation's per-vertex squash/stretch multipliers, which weight and refine this same value further.")]
     [SerializeField] private float strechFactor = 0.2f;
+
+    [SerializeField] private InputAction moveAction;
     
-    private NavMeshAgent navMeshAgent;
-    private Vector3 targetPosition;
     private bool hasTarget;
-    private float decisionCooldown = 0.2f;
-
-    private float decisionTimer;
-
     private Vector2 CurrentLocation; 
     private Vector2 TargetLocation; 
     private Vector2 PendingDirection;
@@ -65,17 +63,19 @@ public class GridMovement : MonoBehaviour
     {
         currnetGroundPivotOffset = groundPivotOffset;
     }
+    void OnEnable()
+    {
+        moveAction.Enable();
+        moveAction.performed += OnMoved;
+    }
+    void OnDisable()
+    {
+        moveAction.Disable();
+        moveAction.performed -= OnMoved;
+    }
     void Start()
     {
-        if (navMeshAgent == null)
-            navMeshAgent = GetComponent<NavMeshAgent>();
-
-        if (navMeshAgent != null)
-        {
-            navMeshAgent.updatePosition = false;
-            navMeshAgent.updateRotation = false;
-        }
-
+       
          baseScale = transform.localScale;
          CurrentLocation = new Vector2(Mathf.Round(transform.position.x / gridSize), 
          Mathf.Round(transform.position.z / gridSize)
@@ -100,12 +100,6 @@ public class GridMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        decisionTimer -= Time.deltaTime;
-            if(decisionTimer <=- 0f)
-            {
-                decisionTimer = decisionCooldown / jumpSpeedMultiplyer;
-                TryMoveTowardsTarget();
-            }
 
         if(isAnticipating)
         {
@@ -192,8 +186,6 @@ public class GridMovement : MonoBehaviour
     {
         groundSurface = default; 
 
-        if(navMeshAgent == null)
-            return false; 
 
         Vector3 samplePosition = rootPosition;
         samplePosition.y -= currnetGroundPivotOffset;
@@ -202,7 +194,7 @@ public class GridMovement : MonoBehaviour
             samplePosition,
             out NavMeshHit hit,
             _navMeshSnapDistance, 
-            navMeshAgent.areaMask) 
+            NavMesh.AllAreas) 
             && SetGroundSurface(hit.position, out groundSurface);
         
     }
@@ -240,12 +232,6 @@ public class GridMovement : MonoBehaviour
         if (isIntialized)
         ApplyScale(0.0f); 
 
-        if(navMeshAgent != null && navMeshAgent.enabled && navMeshAgent.isOnNavMesh)
-        {
-            navMeshAgent.nextPosition = navMeshSurfacePosition; 
-        }
-
-        
     }
 
     public Vector3 GetBaseScale() => baseScale;
@@ -357,65 +343,21 @@ public class GridMovement : MonoBehaviour
         }
     }
 
-    public void SetTargetPosition(Vector3 position)
+    private void OnMoved(InputAction.CallbackContext context)
     {
-        targetPosition = position;
-        hasTarget = true;
+        Vector2 rawInput = context.ReadValue<Vector2>();
+        Vector2 moveInput = SnapToGridDirection(rawInput.x, rawInput.y);
+        if(moveInput == Vector2.zero) return;
 
-        if(navMeshAgent == null || !navMeshAgent.enabled ||!navMeshAgent.isOnNavMesh)
+        if(!IsMoving && !isAnticipating && !HasPendingInput)
         {
-            return;
-        }
-        navMeshAgent.nextPosition = transform.position; 
-
-        navMeshAgent.SetDestination(targetPosition);
-    }
-
-    public void SetNavMeshtarget(NavMeshAgent _navMeshAgent)
-    {
-        navMeshAgent = _navMeshAgent;
-        if(navMeshAgent == null)
-            return; 
-        
-        navMeshAgent.updatePosition = false;
-        navMeshAgent.updateRotation = false;
-    }
-
-    public void ClearTargetPosition()
-    {
-        hasTarget = false;
-
-        if (navMeshAgent != null && navMeshAgent.enabled && navMeshAgent.isOnNavMesh)
-        {
-            navMeshAgent.ResetPath();
-        }
-
-    }
-
-    private void TryMoveTowardsTarget()
-    {
-        if(!hasTarget || navMeshAgent == null || !navMeshAgent.enabled ||!navMeshAgent.isOnNavMesh) 
-            return;
-        if (navMeshAgent.pathPending) 
-            return;
-
-        if(!navMeshAgent.hasPath || navMeshAgent.pathStatus == NavMeshPathStatus.PathInvalid)
-            return;
-
-        Vector3 direction = navMeshAgent.steeringTarget - transform.position;
-        Vector2 gridDirection = SnapToGridDirection(direction.x, direction.z);
-
-
-        if(!IsMoving && !isAnticipating)
-        {
-            BeginJumpAnticipation(gridDirection);
+            BeginJumpAnticipation(moveInput); 
         }
         else
         {
-            PendingDirection = gridDirection;
+            PendingDirection = moveInput; 
             HasPendingInput = true;
         }
-            
     }
 
     Vector2 SnapToGridDirection(float x, float z)
@@ -449,6 +391,9 @@ public class GridMovementEditor : Editor
         EditorGUILayout.PropertyField(serializedObject.FindProperty("jumpSpeedMultiplyer"));
         
         EditorGUILayout.PropertyField(serializedObject.FindProperty("strechFactor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("moveAction"));
+        
+
 
         SerializedProperty showAdvanced = serializedObject.FindProperty("showFineTuneControlls");
         EditorGUILayout.PropertyField(showAdvanced); 

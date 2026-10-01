@@ -430,6 +430,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1748683855 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 78060830693143508, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
+  m_PrefabInstance: {fileID: 3042154601965280195}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f1a0e8296374af409b48d9a326384cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
 --- !u!1 &1824736126
 GameObject:
   m_ObjectHideFlags: 0
@@ -617,6 +628,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1103135443960661777, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3042154601965280197}
+    - targetCorrespondingSourceObject: {fileID: 1103135443960661777, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3042154601965280200}
   m_SourcePrefab: {fileID: 100100000, guid: 32df0ff5c33095840b555cac9d7f2d42, type: 3}
 --- !u!1 &3042154601965280196 stripped
 GameObject:
@@ -645,6 +659,76 @@ MonoBehaviour:
   jumpAnticipationDuration: 0.1
   landingRecoverDuration: 0.08
   strechFactor: 0.2
+  moveAction:
+    m_Name: Move
+    m_Type: 0
+    m_ExpectedControlType: Vector2
+    m_Id: f6ae3394-7ab3-4caf-be25-45f06d949a67
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 2D Vector
+      m_Id: 1dd2c7dd-6cea-40cd-9a73-3dae686a7f4c
+      m_Path: 2DVector
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Move
+      m_Flags: 4
+    - m_Name: up
+      m_Id: 257a2330-b4f1-4153-92c5-69f932b773d1
+      m_Path: <Keyboard>/w
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Move
+      m_Flags: 8
+    - m_Name: down
+      m_Id: dad282e0-2fe0-43bf-af85-92664e6f0d5d
+      m_Path: <Keyboard>/s
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Move
+      m_Flags: 8
+    - m_Name: left
+      m_Id: 0b67e6ca-27d7-4da9-8d3d-db06cf97c65b
+      m_Path: <Keyboard>/a
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Move
+      m_Flags: 8
+    - m_Name: right
+      m_Id: db1260a4-adb9-4f62-b6f2-6e54a62c1957
+      m_Path: <Keyboard>/d
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Move
+      m_Flags: 8
+    m_Flags: 0
+--- !u!114 &3042154601965280200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3042154601965280196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b978ab568b8234cada45fe81bc315a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlimeEnemy
+  _gridMovement: {fileID: 3042154601965280197}
+  _suspendedItemsSpawner: {fileID: 1748683855}
+  _landingHitRadius: 0.9
+  _landingHitDepth: 1.5
+  _landingHitAboveTolerance: 0.25
+  _contactRadius: 1.3
+  _pushAcceleration: 12
+  _contactDamage: 1
+  _contactDamageInterval: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
