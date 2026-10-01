@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class MeshDeformation : MonoBehaviour
 {
-    [SerializeField] private Transform otherSlime;
+    [SerializeField] private Transform stretchTarget;
     [SerializeField] private float StrechThreshold;
     [SerializeField] private float consumeDuration;
     [SerializeField] private float relaxDuration;
@@ -186,7 +186,7 @@ public class MeshDeformation : MonoBehaviour
     }
     private float UpdateRelaxState()
     {
-        if(otherSlime != null)
+        if(stretchTarget != null)
         {
             isRelaxing = false;
             hasDeformedVertices = true;
@@ -231,12 +231,12 @@ public class MeshDeformation : MonoBehaviour
 
     private Vector3 GetBaseVertexPosition(int index, Vector3 localVertexPosition, float bounceAlpha)
     {
-        if(otherSlime != null)
+        if(stretchTarget != null)
             {
              Vector3 vertexWorldPos = transform.TransformPoint(localVertexPosition);
-             float distance = Vector3.Distance(vertexWorldPos, otherSlime.transform.position);
+             float distance = Vector3.Distance(vertexWorldPos, stretchTarget.transform.position);
              stretchAlpha = Mathf.Clamp01(1f - Mathf.Pow((distance / StrechThreshold), 2));
-             Vector3 newVertexPos = Vector3.Lerp(vertexWorldPos, otherSlime.transform.position, stretchAlpha);
+             Vector3 newVertexPos = Vector3.Lerp(vertexWorldPos, stretchTarget.transform.position, stretchAlpha);
              return transform.InverseTransformPoint(newVertexPos);
             }
             else if(isRelaxing)

@@ -1,32 +1,54 @@
+using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
-
+using UnityEngine.AI;
+#if UNITY_EDITOR
+using UnityEditor; 
+#endif
 public class GridMovement : MonoBehaviour
 {
-    
-    [SerializeField] private float jumpHeight = 2f;
+    [Header("Movement Settings")]
     [SerializeField] private int gridSize = 1;
+    [SerializeField] private float jumpHeight = 2f;
+    [SerializeField] private float groundPivotOffset = 1.0f;
+    [SerializeField, Min(0.1f)] private float _navMeshSnapDistance = 4.0f;
+    [SerializeField] float jumpSpeedMultiplyer = 1f;
+    [SerializeField] bool showFineTuneControlls;
+
+    [Header("Fine Tuning Jump")]
     [SerializeField] private float moveDuration = 0.5f;
     [SerializeField] private float jumpAnticipationDuration = 0.1f;
     [SerializeField] private float landingRecoverDuration = 0.08f;
+    
 
     [Header("Whole mesh squash and stretch")]
     [Tooltip("Whole-object squash/stretch driven by this script's own movement timing (jump, anticipation, landing). Separate from MeshDeformation's per-vertex squash/stretch multipliers, which weight and refine this same value further.")]
     [SerializeField] private float strechFactor = 0.2f;
     
-    [SerializeField] private InputAction moveAction;
+    private NavMeshAgent navMeshAgent;
+    private Vector3 targetPosition;
+    private bool hasTarget;
+    private float decisionCooldown = 0.2f;
+
+    private float decisionTimer;
 
     private Vector2 CurrentLocation; 
-    private Vector2 TargetLocation;
+    private Vector2 TargetLocation; 
+    private Vector2 PendingDirection;
+    private Vector3 baseScale;
     private float moveAlpha;
     private float BaseHeight;
-    private Vector3 baseScale;
+
+    private float targetBaseHeight; 
+    private float currnetGroundPivotOffset; 
+    private bool isIntialized;
+
     private float currentStretchAmount;
     private float jumpAnticipationAlpha;
     private float anticipationStartStretch;
     private float landingRecoverAlpha;
     private float landingStartStretch;
-    private Vector2 PendingDirection;
+    
+
     private MeshDeformation meshDeformation;
 
     private bool IsMoving; 
@@ -34,32 +56,57 @@ public class GridMovement : MonoBehaviour
     private bool isAnticipating;
     private bool isRecoveringFromLanding;
 
+    public event Action<Vector3> LandingApproaching;
+    public event Action OnLanded;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    private void OnEnable()
-    {
-        moveAction.Enable(); 
-        moveAction.performed += OnMoved;
-    }
 
-    private void OnDisable()
+    void Awake()
     {
-        moveAction.Disable(); 
-        moveAction.performed -= OnMoved;
+        currnetGroundPivotOffset = groundPivotOffset;
     }
-
     void Start()
     {
-       // Debug.Log(GetComponent<MeshFilter>().mesh.vertexCount);
+        if (navMeshAgent == null)
+            navMeshAgent = GetComponent<NavMeshAgent>();
+
+        if (navMeshAgent != null)
+        {
+            navMeshAgent.updatePosition = false;
+            navMeshAgent.updateRotation = false;
+        }
+
          baseScale = transform.localScale;
-         CurrentLocation = transform.localPosition;
+         CurrentLocation = new Vector2(Mathf.Round(transform.position.x / gridSize), 
+         Mathf.Round(transform.position.z / gridSize)
+         );
          meshDeformation = GetComponentInChildren<MeshDeformation>();
          currentStretchAmount = 0f;
          ApplyScale(0f);
+        
+        isIntialized = true; 
+
+        if(TryGetGroundSurface(transform.position, out Vector3 groundSurface))
+        {
+            ResetToGround(groundSurface);
+        }
+        else
+        {
+            BaseHeight = transform.position.y;
+            targetBaseHeight = BaseHeight;
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        decisionTimer -= Time.deltaTime;
+            if(decisionTimer <=- 0f)
+            {
+                decisionTimer = decisionCooldown / jumpSpeedMultiplyer;
+                TryMoveTowardsTarget();
+            }
+
         if(isAnticipating)
         {
             UpdateJumpAnticipation();
@@ -71,18 +118,30 @@ public class GridMovement : MonoBehaviour
             UpdateLandingRecovery();
             return;
         }
-        
-        moveAlpha += Time.deltaTime / moveDuration;
+        float effectiveDuration = moveDuration / jumpSpeedMultiplyer; 
+        moveAlpha += Time.deltaTime / effectiveDuration;
         moveAlpha = Mathf.Clamp(moveAlpha, 0, 1);
         float smoothMoveAlpha = Mathf.SmoothStep(0f, 1f, moveAlpha);
         Vector3 newLocation = Vector3.Lerp(GridToWorld(CurrentLocation), GridToWorld(TargetLocation), smoothMoveAlpha);
-        newLocation.y =BaseHeight + Mathf.Sin(moveAlpha * Mathf.PI) * jumpHeight;
+        float groundHeight = Mathf.Lerp(BaseHeight,targetBaseHeight, smoothMoveAlpha);
+        newLocation.y = groundHeight + Mathf.Sin(moveAlpha * Mathf.PI) * jumpHeight;
         currentStretchAmount = -Mathf.Cos((1- moveAlpha) * Mathf.PI * 2f) * strechFactor; 
         ApplyScale(currentStretchAmount);
         transform.position = newLocation; 
 
+        if (moveAlpha >= 0.5f)
+        {
+            Vector3 landingPosition = GridToWorld(TargetLocation);
+            landingPosition.y = targetBaseHeight;
+            LandingApproaching?.Invoke(landingPosition);
+        }
+
         if(moveAlpha >= 1)
         {
+            Vector3 landingPosition = GridToWorld(TargetLocation);
+            landingPosition.y = targetBaseHeight;
+            transform.position = landingPosition;
+            BaseHeight = targetBaseHeight;
             CurrentLocation = TargetLocation;
             IsMoving = false; 
             BeginLandingRecovery();
@@ -94,17 +153,20 @@ public class GridMovement : MonoBehaviour
             }
         }
     }
+
     
     public void UpdateBaseScale(Vector3 newBaseScale)
     {
         if(meshDeformation != null)
         {
             float deltaY = -meshDeformation.MinY *(newBaseScale.y - baseScale.y);
+            currnetGroundPivotOffset += deltaY;
             transform.position += new Vector3 (0f, deltaY, 0f);
             
             if(IsMoving)
             {
                 BaseHeight += deltaY;
+                targetBaseHeight += deltaY;
             }
         }
 
@@ -126,13 +188,80 @@ public class GridMovement : MonoBehaviour
         ApplyScale(strechAmount);
     }
 
+    private bool TryGetGroundSurface(Vector3 rootPosition, out Vector3 groundSurface)
+    {
+        groundSurface = default; 
+
+        if(navMeshAgent == null)
+            return false; 
+
+        Vector3 samplePosition = rootPosition;
+        samplePosition.y -= currnetGroundPivotOffset;
+
+        return NavMesh.SamplePosition(
+            samplePosition,
+            out NavMeshHit hit,
+            _navMeshSnapDistance, 
+            navMeshAgent.areaMask) 
+            && SetGroundSurface(hit.position, out groundSurface);
+        
+    }
+    private static bool SetGroundSurface(Vector3 position, out Vector3 groundSurface)
+    {
+        groundSurface = position;
+        return true;
+    }
+
+    public void ResetToGround(Vector3 navMeshSurfacePosition)
+    {
+        Vector3 rootPosition = navMeshSurfacePosition;
+        rootPosition.y += currnetGroundPivotOffset; 
+        transform.position = rootPosition;
+
+        CurrentLocation = new Vector2(
+            Mathf.Round(rootPosition.x / gridSize), 
+            Mathf.Round(rootPosition.z / gridSize));
+
+        TargetLocation = CurrentLocation;
+        BaseHeight = rootPosition.y; 
+        targetBaseHeight = rootPosition.y; 
+
+        moveAlpha = 0.0f; 
+        jumpAnticipationAlpha = 0.0f; 
+        landingRecoverAlpha = 0.0f; 
+        currentStretchAmount = 0.0f;
+
+        IsMoving = false;
+        HasPendingInput = false;
+        isAnticipating = false;
+        isRecoveringFromLanding = false;
+        hasTarget = false;
+
+        if (isIntialized)
+        ApplyScale(0.0f); 
+
+        if(navMeshAgent != null && navMeshAgent.enabled && navMeshAgent.isOnNavMesh)
+        {
+            navMeshAgent.nextPosition = navMeshSurfacePosition; 
+        }
+
+        
+    }
+
     public Vector3 GetBaseScale() => baseScale;
 
-    public Vector3 GetRootPosition() => GridToWorld(CurrentLocation);
+    public Vector3 GetRootPosition()
+    {
+        Vector3 rootPosition =GridToWorld(CurrentLocation);
+        rootPosition.y = BaseHeight;
+        return rootPosition;
+    } 
 
     public float GetStretchAmount() => currentStretchAmount;
 
     public bool GetIsMoving() => IsMoving;
+    public bool GetIsRecoveringFromLanding() =>  isRecoveringFromLanding;
+
 
     private Vector3 GridToWorld(Vector2 gridLocation)
     {
@@ -146,7 +275,26 @@ public class GridMovement : MonoBehaviour
         if(direction == Vector2.zero) return;
 
         TargetLocation = CurrentLocation + direction;
-        BaseHeight = transform.position.y;
+        if(TryGetGroundSurface(transform.position, out Vector3 startSurface))
+        {
+            BaseHeight = startSurface.y + currnetGroundPivotOffset;
+        }
+        else
+        {
+            BaseHeight = transform.position.y;
+        }
+        Vector3 targetWorldPosition = GridToWorld(TargetLocation);
+        targetWorldPosition.y = BaseHeight;
+
+        if(TryGetGroundSurface(targetWorldPosition, out Vector3 targetSurface))
+        {
+            targetBaseHeight = targetSurface.y + currnetGroundPivotOffset;
+        }
+        else
+        {
+            targetBaseHeight = BaseHeight;
+        }
+
         anticipationStartStretch = currentStretchAmount;
         jumpAnticipationAlpha = 0f;
         IsMoving = false;
@@ -156,7 +304,8 @@ public class GridMovement : MonoBehaviour
 
     private void UpdateJumpAnticipation()
     {
-        float safeAnticipationDuration = Mathf.Max(jumpAnticipationDuration, Mathf.Epsilon);
+        float effectiveDuration = jumpAnticipationDuration / jumpSpeedMultiplyer;
+        float safeAnticipationDuration = Mathf.Max(effectiveDuration, Mathf.Epsilon);
         jumpAnticipationAlpha += Time.deltaTime / safeAnticipationDuration;
         jumpAnticipationAlpha = Mathf.Clamp01(jumpAnticipationAlpha);
 
@@ -186,14 +335,15 @@ public class GridMovement : MonoBehaviour
         landingRecoverAlpha = 0f;
         isRecoveringFromLanding = true;
         meshDeformation?.TriggerWaveRippleEffect();
+        OnLanded?.Invoke();
     }
 
     private void UpdateLandingRecovery()
     {
         if(!isRecoveringFromLanding) return;
-
+        float effectiveDuration = landingRecoverDuration / jumpSpeedMultiplyer;
         float rippleDuration = meshDeformation != null ? meshDeformation.GetWaveTravelDuration() : 0f;
-        float safeLandingRecoverDuration = Mathf.Max(landingRecoverDuration, rippleDuration, Mathf.Epsilon);
+        float safeLandingRecoverDuration = Mathf.Max(effectiveDuration, rippleDuration, Mathf.Epsilon);
         landingRecoverAlpha += Time.deltaTime / safeLandingRecoverDuration;
         landingRecoverAlpha = Mathf.Clamp01(landingRecoverAlpha);
         currentStretchAmount = Mathf.Lerp(landingStartStretch, 0f, landingRecoverAlpha);
@@ -207,20 +357,111 @@ public class GridMovement : MonoBehaviour
         }
     }
 
-    private void OnMoved(InputAction.CallbackContext context)
+    public void SetTargetPosition(Vector3 position)
     {
-        Vector2 moveInput = context.ReadValue<Vector2>();
-        if(moveInput == Vector2.zero) return;
+        targetPosition = position;
+        hasTarget = true;
 
-        if (!IsMoving && !isAnticipating && !HasPendingInput)
+        if(navMeshAgent == null || !navMeshAgent.enabled ||!navMeshAgent.isOnNavMesh)
         {
-            BeginJumpAnticipation(moveInput);
-        } 
-        else
+            return;
+        }
+        navMeshAgent.nextPosition = transform.position; 
+
+        navMeshAgent.SetDestination(targetPosition);
+    }
+
+    public void SetNavMeshtarget(NavMeshAgent _navMeshAgent)
+    {
+        navMeshAgent = _navMeshAgent;
+        if(navMeshAgent == null)
+            return; 
+        
+        navMeshAgent.updatePosition = false;
+        navMeshAgent.updateRotation = false;
+    }
+
+    public void ClearTargetPosition()
+    {
+        hasTarget = false;
+
+        if (navMeshAgent != null && navMeshAgent.enabled && navMeshAgent.isOnNavMesh)
         {
-            PendingDirection = moveInput;
-            HasPendingInput = true;
+            navMeshAgent.ResetPath();
         }
 
     }
+
+    private void TryMoveTowardsTarget()
+    {
+        if(!hasTarget || navMeshAgent == null || !navMeshAgent.enabled ||!navMeshAgent.isOnNavMesh) 
+            return;
+        if (navMeshAgent.pathPending) 
+            return;
+
+        if(!navMeshAgent.hasPath || navMeshAgent.pathStatus == NavMeshPathStatus.PathInvalid)
+            return;
+
+        Vector3 direction = navMeshAgent.steeringTarget - transform.position;
+        Vector2 gridDirection = SnapToGridDirection(direction.x, direction.z);
+
+
+        if(!IsMoving && !isAnticipating)
+        {
+            BeginJumpAnticipation(gridDirection);
+        }
+        else
+        {
+            PendingDirection = gridDirection;
+            HasPendingInput = true;
+        }
+            
+    }
+
+    Vector2 SnapToGridDirection(float x, float z)
+    {
+        float absX = Mathf.Abs(x);
+        float absZ = Mathf.Abs(z); 
+
+        bool xIsMeaningful = absX  > absZ * 0.5f;
+        bool zIsMeaningful = absZ > absX * 0.5f; 
+
+        float snappedX = xIsMeaningful ? Mathf.Sign(x) : 0f;
+        float snappedZ = zIsMeaningful ? Mathf.Sign(z) : 0f;
+
+        return new Vector2(snappedX, snappedZ);
+            
+    }
 }
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(GridMovement))]
+public class GridMovementEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        serializedObject.Update();
+
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("gridSize"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("jumpHeight"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("groundPivotOffset"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("_navMeshSnapDistance"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("jumpSpeedMultiplyer"));
+        
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("strechFactor"));
+
+        SerializedProperty showAdvanced = serializedObject.FindProperty("showFineTuneControlls");
+        EditorGUILayout.PropertyField(showAdvanced); 
+
+        if(showAdvanced.boolValue)
+        {
+             
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("moveDuration"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("jumpAnticipationDuration"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("landingRecoverDuration"));
+        }
+
+        serializedObject.ApplyModifiedProperties();
+    }
+}
+#endif

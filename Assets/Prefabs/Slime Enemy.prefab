@@ -10,8 +10,14 @@ GameObject:
   m_Component:
   - component: {fileID: 7057724411103078091}
   - component: {fileID: 3721985741271737132}
-  m_Layer: 0
-  m_Name: Player
+  - component: {fileID: 7249578525924694049}
+  - component: {fileID: 6617148645301462364}
+  - component: {fileID: 5870802931583452111}
+  - component: {fileID: 5990574881954042788}
+  - component: {fileID: 2458613900899225045}
+  - component: {fileID: 5722081375401140811}
+  m_Layer: 8
+  m_Name: Slime Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -27,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7057724411103078092}
@@ -54,6 +60,154 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &7249578525924694049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1103135443960661777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6b105bfa683868468e1a1c7ec3abb50, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GridMovement
+  gridSize: 1
+  jumpHeight: 3
+  groundPivotOffset: 1
+  _navMeshSnapDistance: 4
+  jumpSpeedMultiplyer: 1
+  showFineTuneControlls: 0
+  moveDuration: 0.8
+  jumpAnticipationDuration: 0.3
+  landingRecoverDuration: 0.4
+  strechFactor: 0.1
+--- !u!195 &6617148645301462364
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1103135443960661777}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.53
+  m_Speed: 3.5
+  m_Acceleration: 12
+  avoidancePriority: 50
+  m_AngularSpeed: 360
+  m_StoppingDistance: 1.6
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1
+  m_BaseOffset: 0.5
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &5870802931583452111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1103135443960661777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a6d1dfcf5df4c509531384f54d452b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TenSecondDungeon.Health
+  _maxHealth: 3
+--- !u!114 &5990574881954042788
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1103135443960661777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b978ab568b8234cada45fe81bc315a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  _detectionRadius: 8
+  _maximumVerticalTargetDistance: 2
+  _targetRefreshInterval: 0.1
+  _movementSpeed: 3.5
+  _acceleration: 12
+  _turnSpeed: 360
+  _navMeshSnapDistance: 4
+  _knockbackDamping: 5
+  _attackRange: 2
+  _attacksPerSecond: 1
+  _attackDamage: 5
+  _swingDuration: 0.35
+  _impactNormalizedTime: 0.5
+  _swingArc: 92.5
+  _attackOriginHeight: 0
+  _corpseLifetime: 2
+  _deathSound: {fileID: 8300000, guid: ab45047998513444bb84c4abf101064f, type: 3}
+  _footstepLoop: {fileID: 8300000, guid: 9d7c66f87897ca043835ff37a7168b5f, type: 3}
+  _footstepInterval: 0.42
+  _footstepVolume: 1
+  _footstepMinDistance: 1
+  _footstepMaxDistance: 14
+  _takeDamageSounds:
+  - {fileID: 8300000, guid: 0ce9f7a282a5bff48a56ab51214f477e, type: 3}
+  - {fileID: 8300000, guid: ef7683a9d41c10243a2d8194d6d1aeab, type: 3}
+  - {fileID: 8300000, guid: 91c385538f3650c4abb76dcc86f26e98, type: 3}
+  _attackHitSounds:
+  - {fileID: 8300000, guid: 301fa3304dd90034b9ffa884c279a458, type: 3}
+  - {fileID: 8300000, guid: 818d8274f3f69044e9ffb63bcf20dca3, type: 3}
+  _gridMovement: {fileID: 7249578525924694049}
+  _suspendedItemsSpawner: {fileID: 6621473563273238247}
+  _landingHitRadius: 1.1
+  _landingHitDepth: 2
+  _landingHitAboveTolerance: 0.99
+  _contactRadius: 0.89
+  _pushAcceleration: 300
+  _contactDamage: 1
+  _contactDamageInterval: 1
+--- !u!95 &2458613900899225045
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1103135443960661777}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5722081375401140811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1103135443960661777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4df75f0855c4d9c9d332283b51f8be1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TenSecondDungeon.EnemyRagdoll
+  _totalMass: 0.75
+  _limbRadiusRatio: 0.18
+  _corpseMaterial: {fileID: 13400000, guid: c68ab8e1321a4ef48bba2e84f6150d42, type: 2}
+  _bodyColliderSource: {fileID: 0}
+  _deathImpulse: 1.5
+  _deathTorque: 2.5
+  _physicalizeArmBones: 0
 --- !u!1 &1103135443960661778
 GameObject:
   m_ObjectHideFlags: 0
@@ -68,8 +222,8 @@ GameObject:
   - component: {fileID: 3111143490808948983}
   - component: {fileID: 5712776234671569592}
   - component: {fileID: 5952834044087360399}
-  - component: {fileID: 78060830693143508}
-  m_Layer: 0
+  - component: {fileID: 6621473563273238247}
+  m_Layer: 8
   m_Name: VisualRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -85,7 +239,7 @@ Transform:
   m_GameObject: {fileID: 1103135443960661778}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.044, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -146,7 +300,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &3111143490808948983
 MonoBehaviour:
@@ -160,7 +313,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f17488e3818bd34ba19cfa3b6a30b05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeshDeformation
-  otherSlime: {fileID: 0}
+  stretchTarget: {fileID: 0}
   StrechThreshold: 3
   consumeDuration: 2
   relaxDuration: 0.8
@@ -168,8 +321,8 @@ MonoBehaviour:
   growthMultiplier: 2
   squashEffectMultiplier: 2
   stretchEffectMultiplier: 1
-  dragStifness: 90
-  dragDamping: 0.03
+  dragStifness: 91.2
+  dragDamping: 0.037
   waveTravelRate: 2.15
   waveWidth: 0.7
   waveStrength: 0.1
@@ -192,7 +345,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 3.5
+  m_Radius: 1.59
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &5952834044087360399
 Rigidbody:
@@ -221,7 +374,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
---- !u!114 &78060830693143508
+--- !u!114 &6621473563273238247
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -232,8 +385,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6f1a0e8296374af409b48d9a326384cf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: '::'
-  safetyMargin: 0.8
+  m_EditorClassIdentifier: Assembly-CSharp::SuspendedItemSpawner
+  safetyMargin: 1
   slotPrefab: {fileID: 4416146074326486346, guid: cb2c7a32cf486a64ca048f7765de53f8, type: 3}
-  minSlotDistance: 0.5
+  minSlotDistance: 1
+  minMaxStiffnessSlider: {x: 26.302729, y: 56.004963}
+  minMaxDampingSlider: {x: 0.2223325, y: 0.37493795}
+  batchCount: 2
   suspendedItemsSet: {fileID: 11400000, guid: e035bf627e345114cb2bd70c3f752eba, type: 2}

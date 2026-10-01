@@ -13,7 +13,8 @@ public class SuspendBone : MonoBehaviour
     private SuspendedItemSpawner suspendedItemSpawner;
     private Vector3 restLocalPosition;
     private float meshHalfHeight;
-    private Bounds meshBounds;
+    private float distanceToTop;
+    private float distanceToBottom;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Awake()
     {
@@ -32,7 +33,7 @@ public class SuspendBone : MonoBehaviour
         Vector3 slimeRealtivePos = meshDeformeration.transform.InverseTransformPoint(transform.position);
 
         // Clamp the position within the bounds of the root bounding box
-        slimeRealtivePos.y = Mathf.Clamp(slimeRealtivePos.y, bounds.min.y + meshHalfHeight, bounds.max.y - meshHalfHeight);
+        slimeRealtivePos.y = Mathf.Clamp(slimeRealtivePos.y, bounds.min.y + distanceToBottom, bounds.max.y - distanceToTop);
 
         // convert the clamped position back to world space 
         Vector3 pos = meshDeformeration.transform.TransformPoint(slimeRealtivePos);
@@ -49,8 +50,8 @@ public class SuspendBone : MonoBehaviour
         Renderer renderer = GetComponentInChildren<Renderer>();
         if(renderer != null)
         {
-            meshHalfHeight = renderer.bounds.extents.y;
-            Debug.Log(gameObject.name + " OnModelAttached: meshHalfHeight=" + meshHalfHeight + " renderer.bounds=" + renderer.bounds);
+            distanceToTop = renderer.bounds.max.y - transform.position.y;
+            distanceToBottom = transform.position.y - renderer.bounds.min.y;
         }
         else
         {
@@ -69,6 +70,7 @@ public class SuspendBone : MonoBehaviour
     }
     public float GetHeightRatio() => heightRatio;
     public Vector3 GetRestPosition() => restLocalPosition;
+
 
     public void SnapTo(Vector3 position) => springFollow.SnapToTarget(position);
     public void BeginRelease() => springFollow.BeginRelease();

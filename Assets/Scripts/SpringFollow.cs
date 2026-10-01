@@ -6,6 +6,7 @@ public class SpringFollow : MonoBehaviour
     [Range(0f, 1f)] [SerializeField] private float dragDamping;
 
 
+
     private Vector3 velocity;
     private Vector3 intialLocalPosition;
     private bool isReleasing;
@@ -45,6 +46,16 @@ public class SpringFollow : MonoBehaviour
     public void ZeroVelocityY()
     {
         velocity.y = 0f;
+    }
+
+    public void RandomizeDragParameters( Vector2 stiffnessRange, Vector2 dampingRange)
+    {
+        RandomizeDragParameters(stiffnessRange.x, stiffnessRange.y, dampingRange.x, dampingRange.y);
+    }
+    public void RandomizeDragParameters(float minStiffness, float maxStiffness, float minDamping, float maxDamping)
+    {
+        dragStifness = Random.Range(minStiffness, maxStiffness);
+        dragDamping = Random.Range(minDamping, maxDamping);
     }
 
     public Vector3 GetLocalPosition() => transform.localPosition;

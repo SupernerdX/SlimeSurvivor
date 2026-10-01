@@ -1,5 +1,7 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 public class SuspendedItemSpawner : MonoBehaviour
@@ -21,6 +23,10 @@ public class SuspendedItemSpawner : MonoBehaviour
     
     [SerializeField] private GameObject slotPrefab;
     [SerializeField] private float minSlotDistance = 0.2f;
+
+    [SerializeField] private Vector2 minMaxStiffnessSlider = new Vector2(50f, 150f);
+    [SerializeField] private Vector2 minMaxDampingSlider = new Vector2(0.2f, 0.5f);
+    [SerializeField] private int batchCount = 3;
     private MeshDeformation meshDeformation;
     private Bounds spawnerBounds;
     private Vector3 spawnPosition;
@@ -29,7 +35,7 @@ public class SuspendedItemSpawner : MonoBehaviour
     public SuspendedItemsSet suspendedItemsSet;
    
     private const int MaxAttempts = 30;
-    private int batchCount = 3;
+    
     private GameObject slotObject;
    
 
@@ -49,7 +55,7 @@ public class SuspendedItemSpawner : MonoBehaviour
         return spawnBounds;
     }
 
-    private void CreateSlots(int batchCount)
+    public void CreateSlots(int batchCount)
     {
         for(int i = 0; i < batchCount; i++)
         {
@@ -64,7 +70,6 @@ public class SuspendedItemSpawner : MonoBehaviour
                 if(CheckIsValidPosition(spawnPosition))
                 {
                     foundValidPostion = true;
-                    Debug.Log("Local candidate Y: " + spawnPosition.y + " - Valid: " + CheckIsValidPosition(spawnPosition));
                     break;
                 }
                     
@@ -72,7 +77,6 @@ public class SuspendedItemSpawner : MonoBehaviour
             if(foundValidPostion)
             {
                 Vector3 worldSpawnPosition = transform.TransformPoint(spawnPosition);
-                Debug.Log("World spawn Y: " + worldSpawnPosition.y);
                 slotObject = Instantiate(slotPrefab, worldSpawnPosition, Quaternion.identity, transform);
                 Slot newSlot = new Slot(slotObject, false);
                 slots.Add(newSlot);  
@@ -85,12 +89,19 @@ public class SuspendedItemSpawner : MonoBehaviour
     private void AttachObjectTo(GameObject targetObject)
     {
         GameObject randoPrefab = suspendedItemsSet.itemPrefabs[Random.Range(0, suspendedItemsSet.itemPrefabs.Length)];
-        Instantiate(randoPrefab, targetObject.transform.position,Quaternion.identity, targetObject.transform);
+        Instantiate(randoPrefab, targetObject.transform.position, Quaternion.Euler(Random.Range(0, 360), Random.Range(0, 360), Random.Range(0, 360)), targetObject.transform);
 
         SuspendBone bone = targetObject.GetComponent<SuspendBone>();
         if (bone != null)
         {
             bone.OnModelAttached();
+        }
+        SpringFollow springFollow = targetObject.GetComponent<SpringFollow>();
+        if (springFollow != null)
+        {
+            springFollow.RandomizeDragParameters(
+                minMaxStiffnessSlider.x, minMaxStiffnessSlider.y, 
+                minMaxDampingSlider.x, minMaxDampingSlider.y);
         }
     }
 
@@ -150,9 +161,46 @@ public class SuspendedItemSpawner : MonoBehaviour
         Gizmos.DrawWireCube(spawnerBounds.center, spawnerBounds.size);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }
+#if UNITY_EDITOR
+[CustomEditor(typeof(SuspendedItemSpawner))]
+
+public class SuspendedItemSpawnerEditor : Editor
+{
+     public override void OnInspectorGUI()
+     {
+        DrawPropertiesExcluding(serializedObject, "minMaxStiffnessSlider", "minMaxDampingSlider");
+        serializedObject.Update();
+
+        SerializedProperty stiffnessProp = serializedObject.FindProperty("minMaxStiffnessSlider");
+        Vector2 stiffnessRange = stiffnessProp.vector2Value; 
+
+        float stiffMinValue = stiffnessRange.x;
+        float stiffMaxValue = stiffnessRange.y; 
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Stiffness Range", GUILayout.Width(120));
+        stiffMinValue = EditorGUILayout.FloatField(stiffMinValue, GUILayout.Width(40));
+        EditorGUILayout.MinMaxSlider(ref stiffMinValue, ref stiffMaxValue, 0f, 200f);
+        stiffMaxValue = EditorGUILayout.FloatField(stiffMaxValue, GUILayout.Width(40));
+        EditorGUILayout.EndHorizontal();
+        stiffnessProp.vector2Value = new Vector2(stiffMinValue, stiffMaxValue);
+
+        SerializedProperty DampeningProp = serializedObject.FindProperty("minMaxDampingSlider");
+        Vector2 dampeningRange = DampeningProp.vector2Value; 
+
+        float dampMinValue = dampeningRange.x;
+        float dampMaxValue = dampeningRange.y; 
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Dampness Range", GUILayout.Width(120));
+        dampMinValue = EditorGUILayout.FloatField(dampMinValue, GUILayout.Width(40));
+        EditorGUILayout.MinMaxSlider(ref dampMinValue, ref dampMaxValue, 0f, 1f);
+        dampMaxValue = EditorGUILayout.FloatField(dampMaxValue, GUILayout.Width(40));
+        EditorGUILayout.EndHorizontal();
+        DampeningProp.vector2Value = new Vector2(dampMinValue, dampMaxValue);
+
+        serializedObject.ApplyModifiedProperties();
+    }
+
+}
+
+#endif
