@@ -54,6 +54,8 @@ public class GridMovement : MonoBehaviour
     private bool isAnticipating;
     private bool isRecoveringFromLanding;
 
+    private float bottomYInRoot;
+
     public event Action<Vector3> LandingApproaching;
     public event Action OnLanded;
 
@@ -84,8 +86,10 @@ public class GridMovement : MonoBehaviour
          currentStretchAmount = 0f;
          ApplyScale(0f);
         
-        isIntialized = true; 
+        isIntialized = true;
 
+        bottomYInRoot = meshDeformation.transform.localPosition.y + meshDeformation.MinY *meshDeformation.transform.localScale.y;
+        currnetGroundPivotOffset = -bottomYInRoot * baseScale.y;
         if(TryGetGroundSurface(transform.position, out Vector3 groundSurface))
         {
             ResetToGround(groundSurface);
@@ -153,7 +157,8 @@ public class GridMovement : MonoBehaviour
     {
         if(meshDeformation != null)
         {
-            float deltaY = -meshDeformation.MinY *(newBaseScale.y - baseScale.y);
+           
+            float deltaY = -bottomYInRoot *(newBaseScale.y - baseScale.y);
             currnetGroundPivotOffset += deltaY;
             transform.position += new Vector3 (0f, deltaY, 0f);
             

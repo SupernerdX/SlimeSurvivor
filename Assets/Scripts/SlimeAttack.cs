@@ -1,26 +1,35 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class SlimeAttack : MonoBehaviour
 {
-    [SerializeField] private GridMovement _gridMovement;
-    [SerializeField] private SuspendedItemSpawner _suspendedItemsSpawner;
-
     [Header("Landing Attack")]
     [SerializeField, Min(0.05f)] private float _landingHitRadius = 0.9f;
     [SerializeField, Min(0.0f)] private float _landingHitDepth = 1.5f;
     [SerializeField, Min(0.0f)] private float _landingHitAboveTolerance = 0.25f;
-    [SerializeField, Min(0.05f)] private float _contactDamageInterval = 1.0f;
+   // [SerializeField, Min(0.05f)] private float _contactDamageInterval = 1.0f;
     [SerializeField, Min(0.0f)] private float _contactDamage = 1f; 
     [SerializeField] private LayerMask _damageableLayers;
+    [SerializeField] private GameObject _slimeTrailPrefab;
+    [SerializeField, Min(0.05f)] private float _slimeTrailCooldownDuration = 1.0f;
 
     [Header("Debug")]
     [SerializeField, Min(0.05f)] private float _debugRadius = 1.3f; 
 
-    private Dictionary<IDamageable, float> _contactDamageTimers = new();
+    private GridMovement _gridMovement;
+    private SuspendedItemSpawner _suspendedItemsSpawner;
+    private MeshDeformation _meshDeformation;
+    private Transform meshTransform;
+    private float _nextSlimeTrailTime;
 
-        void Awake()
-    {
+    //private Dictionary<IDamageable, float> _contactDamageTimers = new();
+
+    void Awake()
+    {   _gridMovement = GetComponent<GridMovement>();
+        _suspendedItemsSpawner = GetComponentInChildren<SuspendedItemSpawner>();
+        _meshDeformation = GetComponentInChildren<MeshDeformation>();
+        meshTransform  = gameObject.GetComponentInChildren<MeshRenderer>().transform;
         _gridMovement.OnLanded += HandleLanded; 
     }
 
@@ -32,7 +41,7 @@ public class SlimeAttack : MonoBehaviour
         }
 
     }
-
+    /*
     private void FixedUpdate()
     {
          if(_gridMovement.GetIsMoving()) 
@@ -53,6 +62,7 @@ public class SlimeAttack : MonoBehaviour
         
         }
     }
+    */
 
     private Collider[] GetNerabyColliders()
     {
@@ -77,7 +87,18 @@ public class SlimeAttack : MonoBehaviour
         collider.TryGetComponent(out IDamageable target);
         if(TryApplyDamageToTarget(target, _contactDamage))
             _suspendedItemsSpawner?.CreateSlots(1);
+            if (_meshDeformation != null)
+                _meshDeformation.TryToGrow();
+        
         }
+        
+        if (_slimeTrailPrefab != null && Time.time >= _nextSlimeTrailTime)
+        {
+            GameObject slimeTrail = Instantiate(_slimeTrailPrefab, transform.position, transform.rotation);
+            slimeTrail.transform.localScale = new Vector3(meshTransform.localScale.x, slimeTrail.transform.localScale.y, meshTransform.localScale.z);
+            _nextSlimeTrailTime = Time.time + _slimeTrailCooldownDuration;
+        }
+        
     
     }
 
@@ -89,6 +110,11 @@ public class SlimeAttack : MonoBehaviour
 
         offset.y = 0.0f;
         return offset.sqrMagnitude <= _landingHitRadius * _landingHitRadius;
+    }
+
+    void OnDrawGizmos()
+    {
+        DrawAttackGizmo();
     }
 
     void DrawAttackGizmo()

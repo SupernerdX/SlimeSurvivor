@@ -121,14 +121,7 @@ public class MeshDeformation : MonoBehaviour
         }
         else if(isGrowing)
         {
-            scaleAlpha += Time.deltaTime / consumeDuration;
-            scaleAlpha = Mathf.Clamp01(scaleAlpha);
-            Vector3 newLocalScale = Vector3.Lerp(startScale, targetScale, scaleAlpha); 
-            ApplyBaseScale(newLocalScale);
-            if(scaleAlpha >= 1f)
-            {
-                isGrowing = false;
-            }
+           UpdateGrowth();
         }
     }
 
@@ -183,6 +176,23 @@ public class MeshDeformation : MonoBehaviour
         }
 
         transform.localScale = newScale;
+    }
+
+    public void TryToGrow()
+    {
+        if(isGrowing) return;
+        startScale = GetCurrentBaseScale();
+        targetScale = startScale * growthMultiplier;
+        scaleAlpha = 0f;
+        isGrowing = true;
+    }
+
+    public void UpdateGrowth()
+    {
+       scaleAlpha = Mathf.Clamp01(scaleAlpha + Time.deltaTime / Mathf.Max(consumeDuration, 0.0001f));
+        ApplyBaseScale(Vector3.Lerp(startScale, targetScale, scaleAlpha));
+        if(scaleAlpha >= 1f)
+            isGrowing = false;
     }
     private float UpdateRelaxState()
     {
