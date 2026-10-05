@@ -1,9 +1,7 @@
-using System;
-using System.Collections;
-
+using System.Collections.Generic;
 using UnityEngine;
 
-public class SlimeEnemy : MonoBehaviour
+public class SlimeAttack : MonoBehaviour
 {
     [SerializeField] private GridMovement _gridMovement;
     [SerializeField] private SuspendedItemSpawner _suspendedItemsSpawner;
@@ -12,22 +10,18 @@ public class SlimeEnemy : MonoBehaviour
     [SerializeField, Min(0.05f)] private float _landingHitRadius = 0.9f;
     [SerializeField, Min(0.0f)] private float _landingHitDepth = 1.5f;
     [SerializeField, Min(0.0f)] private float _landingHitAboveTolerance = 0.25f;
-
-    [Header("Body Contact")]
-    [SerializeField, Min(0.05f)] private float _contactRadius = 1.3f; 
-    [SerializeField, Min(0.0f)] private float _pushAcceleration = 12f;
-    [SerializeField, Min(0.0f)] private float _contactDamage = 1f; 
     [SerializeField, Min(0.05f)] private float _contactDamageInterval = 1.0f;
+    [SerializeField, Min(0.0f)] private float _contactDamage = 1f; 
+    [SerializeField] private LayerMask _damageableLayers;
 
-    private bool _isPlayerInContact; 
-    private float _nextContactDamageTime; 
-    private Vector3 _lastPushDirection; 
+    [Header("Debug")]
+    [SerializeField, Min(0.05f)] private float _debugRadius = 1.3f; 
 
+    private Dictionary<IDamageable, float> _contactDamageTimers = new();
 
         void Awake()
     {
-        _gridMovement.OnLanded += HandleLanded;
-        _lastPushDirection = transform.forward; 
+        _gridMovement.OnLanded += HandleLanded; 
     }
 
     void OnDestroy()
@@ -41,57 +35,50 @@ public class SlimeEnemy : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if(_gridMovement.GetIsMoving()) 
-            return;  
+         if(_gridMovement.GetIsMoving()) 
+            return; 
 
-        /*
-        if(!TryGetCurrentTargetPosition(CombatTarget.Player, out Vector3 playerPos))
+        Collider[] colliders = GetNerabyColliders();
+        foreach (Collider collider in colliders)
         {
-            _isPlayerInContact = false;
-            return;
+        
+        if(!collider.TryGetComponent(out IDamageable playerTarget)) 
+            continue;
+        _contactDamageTimers.TryGetValue( playerTarget, out float nextAllowedTime);
+
+        if(Time.time >= nextAllowedTime && TryApplyDamageToTarget(playerTarget, _contactDamage))
+            {
+                _contactDamageTimers[playerTarget] = Time.time + _contactDamageInterval;
+            }
+        
         }
-
-        Vector3 offset = playerPos - transform.position;
-        offset.y = 0;
-
-        float sqrDistance = offset.sqrMagnitude;
-        if(sqrDistance > _contactRadius * _contactRadius)
-        {
-            
-        _isPlayerInContact = false; 
-        return;
-
-        }
-        
-        
-        Vector3 dir = sqrDistance > 0.0001f ? offset.normalized : _lastPushDirection; 
-        _lastPushDirection = dir; 
-
-
-       // _gameManager.TryAddForceToPlayer(dir* _pushAcceleration, ForceMode.Acceleration);
-        
-        bool justEntered = !_isPlayerInContact;
-        _isPlayerInContact = true;
-
-        if((justEntered || Time.time >= _nextContactDamageTime) &&
-        TryApplyDamageToTarget(CombatTarget.Player, _contactDamage))
-            _nextContactDamageTime = Time.time + _contactDamageInterval;
-
-        */
-
     }
-    
+
+    private Collider[] GetNerabyColliders()
+    {
+        return Physics.OverlapSphere(transform.position, _debugRadius, _damageableLayers);
+    }
+
+    private bool TryApplyDamageToTarget(IDamageable target, float contactDamage)
+    {
+        if (target == null) return false;
+        target.TakeDamage(contactDamage);
+        return true;
+    }
+
     private void HandleLanded()
     {
-        /*
-        CombatTarget playerTarget = CombatTarget.Player;
-        if (!TryGetCurrentTargetPosition(playerTarget, out Vector3 targetPosition) ||
-            !IsInsideLandingHitArea(targetPosition))
-            return;
+        Collider[] colliders = GetNerabyColliders();
+        foreach (Collider collider in colliders)
+        {
+             if(!IsInsideLandingHitArea(collider.transform.position))
+                continue;
 
-        if (TryApplyDamageToTarget(playerTarget))
+        collider.TryGetComponent(out IDamageable target);
+        if(TryApplyDamageToTarget(target, _contactDamage))
             _suspendedItemsSpawner?.CreateSlots(1);
-        */
+        }
+    
     }
 
     private bool IsInsideLandingHitArea(Vector3 targetPosition)
@@ -119,7 +106,7 @@ public class SlimeEnemy : MonoBehaviour
 
         Color previousColor = Gizmos.color;
         Gizmos.color = Color.cyan;
-        DrawWireDisc(transform.position, Mathf.Max(0.05f, _contactRadius), 32);
+        DrawWireDisc(transform.position, Mathf.Max(0.05f, _debugRadius), 32);
         Gizmos.color = previousColor;
     }
 
